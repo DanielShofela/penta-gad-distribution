@@ -1,0 +1,92 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "client"] },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Item": {
+      "title": "Item",
+      "description": "Luxury appliance item",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "stock": { "type": "integer" }
+      },
+      "required": ["name", "price", "stock"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "items": { "type": "array" },
+        "totalAmount": { "type": "number" },
+        "paymentType": { "type": "string", "enum": ["cash", "installment"] },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "shipped", "delivered"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientId", "items", "totalAmount", "paymentType", "status", "createdAt"]
+    },
+    "PaymentPlan": {
+      "title": "PaymentPlan",
+      "description": "Installment payment plan for an order",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "remainingAmount": { "type": "number" },
+        "installmentsCount": { "type": "integer" },
+        "status": { "type": "string", "enum": ["active", "completed"] }
+      },
+      "required": ["orderId", "clientId", "totalAmount", "remainingAmount", "installmentsCount", "status"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Individual payment record",
+      "type": "object",
+      "properties": {
+        "paymentPlanId": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "completed"] }
+      },
+      "required": ["paymentPlanId", "amount", "date", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/items/{itemId}": {
+      "schema": "Item",
+      "description": "Product catalog"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer orders"
+    },
+    "/paymentPlans/{planId}": {
+      "schema": "PaymentPlan",
+      "description": "Payment plans for installments"
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Individual payments"
+    }
+  }
+}

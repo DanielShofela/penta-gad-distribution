@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "digitalsoutien@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // User: { uid: string, email: string, role: string, displayName: string, photoURL: string }
+    // Item: { name: string, description: string, price: number, imageUrl: string, stock: number }
+    // Order: { clientId: string, items: list, totalAmount: number, paymentType: string, status: string, createdAt: timestamp }
+    // PaymentPlan: { orderId: string, clientId: string, totalAmount: number, remainingAmount: number, installmentsCount: number, status: string }
+    // Payment: { paymentPlanId: string, amount: number, date: timestamp, status: string }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /items/{itemId} {
+      allow read: if true; // Catalog is public
+      allow write: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.clientId || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /paymentPlans/{planId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.clientId || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (get(/databases/$(database)/documents/paymentPlans/$(resource.data.paymentPlanId)).data.clientId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+  }
+}
