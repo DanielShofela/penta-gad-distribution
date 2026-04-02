@@ -237,7 +237,7 @@ const Checkout = () => {
 
             <div className="mt-6 flex items-center justify-center gap-2 text-xs text-gray-400">
               <ShieldCheck size={16} className="text-blue-900" />
-              Paiement 100% sécurisé par LuxAppliance
+              Paiement 100% sécurisé par PENTA GAD
             </div>
           </div>
         </div>

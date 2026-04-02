@@ -22,8 +22,8 @@ const Navbar = () => {
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center gap-2">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-blue-900 rounded-lg flex items-center justify-center text-yellow-500 font-bold text-xl">L</div>
-              <span className="text-xl font-bold text-blue-900 hidden sm:block">LuxAppliance</span>
+              <div className="w-10 h-10 bg-blue-900 rounded-lg flex items-center justify-center text-yellow-500 font-bold text-xl">P</div>
+              <span className="text-xl font-bold text-blue-900 hidden sm:block">PENTA GAD</span>
             </Link>
           </div>
 
@@ -134,8 +134,8 @@ const Footer = () => (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 bg-white rounded flex items-center justify-center text-blue-900 font-bold">L</div>
-            <span className="text-xl font-bold text-yellow-500">LuxAppliance</span>
+            <div className="w-8 h-8 bg-white rounded flex items-center justify-center text-blue-900 font-bold">P</div>
+            <span className="text-xl font-bold text-yellow-500">PENTA GAD</span>
           </div>
           <p className="text-blue-100 opacity-80">
             L'excellence de l'électroménager de luxe à votre portée. Qualité, design et innovation.
@@ -160,7 +160,7 @@ const Footer = () => (
         </div>
       </div>
       <div className="border-t border-blue-800 mt-12 pt-8 text-center text-blue-200 text-sm">
-        © 2026 LuxAppliance. Tous droits réservés.
+        © 2026 PENTA GAD. Tous droits réservés.
       </div>
     </div>
   </footer>

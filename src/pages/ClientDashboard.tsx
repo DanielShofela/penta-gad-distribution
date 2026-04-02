@@ -64,7 +64,7 @@ const ClientDashboard = () => {
           />
           <div>
             <h1 className="text-3xl font-bold text-blue-900">Bonjour, {profile?.displayName}</h1>
-            <p className="text-gray-500">Bienvenue sur votre espace personnel LuxAppliance.</p>
+            <p className="text-gray-500">Bienvenue sur votre espace personnel PENTA GAD.</p>
           </div>
         </div>
         <div className="flex bg-white p-1 rounded-2xl border border-gray-100 shadow-sm self-start">
