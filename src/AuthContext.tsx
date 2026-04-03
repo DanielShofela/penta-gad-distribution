@@ -83,6 +83,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = profile?.role === 'admin';
 
+  useEffect(() => {
+    if (settings?.faviconUrl || settings?.logoUrl) {
+      const link = (document.querySelector("link[rel~='icon']") as HTMLLinkElement) || document.createElement('link');
+      link.type = 'image/x-icon';
+      link.rel = 'icon';
+      link.href = settings.faviconUrl || settings.logoUrl || '';
+      document.getElementsByTagName('head')[0].appendChild(link);
+    }
+    if (settings?.siteName) {
+      document.title = settings.siteName;
+    }
+  }, [settings]);
+
   return (
     <AuthContext.Provider value={{ user, profile, settings, loading, login, logout, isAdmin }}>
       {children}

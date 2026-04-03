@@ -141,9 +141,11 @@ const Footer = () => {
           <div>
             <div className="flex items-center gap-2 mb-4">
               {settings?.logoUrl ? (
-                <img src={settings.logoUrl} alt="Logo" className="h-8 w-auto object-contain brightness-0 invert" referrerPolicy="no-referrer" />
+                <div className="bg-white p-1.5 rounded-xl shadow-sm inline-block">
+                  <img src={settings.logoUrl} alt="Logo" className="h-10 w-auto object-contain" referrerPolicy="no-referrer" />
+                </div>
               ) : (
-                <div className="w-8 h-8 bg-white rounded flex items-center justify-center text-blue-900 font-bold">P</div>
+                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-900 font-bold text-xl">P</div>
               )}
               <span className="text-xl font-bold text-yellow-500">{settings?.siteName || "PENTA GAD"}</span>
             </div>

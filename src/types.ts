@@ -67,5 +67,6 @@ export interface CartItem extends Item {
 
 export interface Settings {
   logoUrl?: string;
+  faviconUrl?: string;
   siteName?: string;
 }

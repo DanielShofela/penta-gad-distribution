@@ -472,8 +472,9 @@ const AdminSettings = () => {
   const { settings } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(settings?.logoUrl || null);
+  const [faviconPreview, setFaviconPreview] = useState<string | null>(settings?.faviconUrl || null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'favicon') => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 800000) { // ~800KB limit for Firestore doc size safety
@@ -482,7 +483,8 @@ const AdminSettings = () => {
       }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
+        if (type === 'logo') setLogoPreview(reader.result as string);
+        else setFaviconPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -494,6 +496,7 @@ const AdminSettings = () => {
     const formData = new FormData(e.currentTarget);
     const newSettings = {
       logoUrl: logoPreview || "",
+      faviconUrl: faviconPreview || "",
       siteName: formData.get('siteName') as string,
     };
 
@@ -521,32 +524,54 @@ const AdminSettings = () => {
               className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" 
             />
           </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-400 mb-1">Logo du Site</label>
-            <div className="flex items-center gap-4">
-              <div className="flex-grow">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-400 mb-1">Logo du Site (Header/Footer)</label>
+              <div className="space-y-4">
                 <input 
                   type="file"
                   accept="image/*"
-                  onChange={handleFileChange}
+                  onChange={(e) => handleFileChange(e, 'logo')}
                   className="w-full p-2 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
-                <p className="mt-2 text-xs text-gray-400 italic">
-                  Téléchargez une image (PNG, JPG) pour le logo.
-                </p>
+                {logoPreview && (
+                  <div className="relative group inline-block">
+                    <img src={logoPreview} alt="Logo Preview" className="h-20 w-20 object-contain rounded-lg border border-gray-100 p-1" />
+                    <button 
+                      type="button"
+                      onClick={() => setLogoPreview(null)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                )}
               </div>
-              {logoPreview && (
-                <div className="relative group">
-                  <img src={logoPreview} alt="Preview" className="h-16 w-16 object-contain rounded-lg border border-gray-100 p-1" />
-                  <button 
-                    type="button"
-                    onClick={() => setLogoPreview(null)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-400 mb-1">Icône du Navigateur (Favicon)</label>
+              <div className="space-y-4">
+                <input 
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, 'favicon')}
+                  className="w-full p-2 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                {faviconPreview && (
+                  <div className="relative group inline-block">
+                    <img src={faviconPreview} alt="Favicon Preview" className="h-10 w-10 object-contain rounded-lg border border-gray-100 p-1" />
+                    <button 
+                      type="button"
+                      onClick={() => setFaviconPreview(null)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
