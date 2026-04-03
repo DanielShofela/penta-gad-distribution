@@ -471,13 +471,29 @@ const AdminUsers = () => {
 const AdminSettings = () => {
   const { settings } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(settings?.logoUrl || null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 800000) { // ~800KB limit for Firestore doc size safety
+        toast.error("L'image est trop volumineuse (max 800KB)");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSaving(true);
     const formData = new FormData(e.currentTarget);
     const newSettings = {
-      logoUrl: formData.get('logoUrl') as string,
+      logoUrl: logoPreview || "",
       siteName: formData.get('siteName') as string,
     };
 
@@ -506,24 +522,33 @@ const AdminSettings = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-400 mb-1">URL du Logo</label>
-            <input 
-              name="logoUrl" 
-              defaultValue={settings?.logoUrl} 
-              placeholder="https://exemple.com/logo.png"
-              className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" 
-            />
-            <p className="mt-2 text-xs text-gray-400 italic">
-              Laissez vide pour utiliser le logo par défaut.
-            </p>
-          </div>
-          
-          {settings?.logoUrl && (
-            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 inline-block">
-              <p className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Aperçu du logo :</p>
-              <img src={settings.logoUrl} alt="Preview" className="h-12 w-auto object-contain" referrerPolicy="no-referrer" />
+            <label className="block text-sm font-bold text-gray-400 mb-1">Logo du Site</label>
+            <div className="flex items-center gap-4">
+              <div className="flex-grow">
+                <input 
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="w-full p-2 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                <p className="mt-2 text-xs text-gray-400 italic">
+                  Téléchargez une image (PNG, JPG) pour le logo.
+                </p>
+              </div>
+              {logoPreview && (
+                <div className="relative group">
+                  <img src={logoPreview} alt="Preview" className="h-16 w-16 object-contain rounded-lg border border-gray-100 p-1" />
+                  <button 
+                    type="button"
+                    onClick={() => setLogoPreview(null)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           <div className="pt-4">
             <button 
