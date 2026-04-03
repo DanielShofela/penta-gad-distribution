@@ -153,9 +153,9 @@ const Footer = () => (
         <div>
           <h3 className="text-lg font-bold mb-4 text-yellow-500">Contact</h3>
           <p className="text-blue-100 opacity-80">
-            123 Avenue du Luxe<br />
-            75008 Paris, France<br />
-            contact@luxappliance.fr
+            8WMR+39 Abidjan.<br />
+            Cité sgbci, Abidjan<br />
+            pentagad.distribution@gmail.com
           </p>
         </div>
       </div>
