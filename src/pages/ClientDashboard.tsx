@@ -7,7 +7,7 @@ import { Package, CreditCard, Clock, CheckCircle, ChevronRight, AlertCircle, Cal
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { cn } from '../lib/utils';
+import { cn, formatCurrency } from '../lib/utils';
 
 const ClientDashboard = () => {
   const { user, profile } = useAuth();
@@ -123,7 +123,7 @@ const ClientDashboard = () => {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right hidden md:block">
-                        <div className="font-bold text-blue-900">{order.totalAmount.toLocaleString()} €</div>
+                        <div className="font-bold text-blue-900">{formatCurrency(order.totalAmount)}</div>
                         <div className="text-xs text-gray-400 uppercase tracking-wider">{order.paymentType === 'cash' ? 'Paiement Cash' : 'Paiement Échelonné'}</div>
                       </div>
                       <div className={cn(
@@ -178,11 +178,11 @@ const ClientDashboard = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
                       <div>
                         <p className="text-blue-300 text-xs uppercase tracking-widest mb-1">Total</p>
-                        <p className="text-2xl font-bold">{plan.totalAmount.toLocaleString()} €</p>
+                        <p className="text-2xl font-bold">{formatCurrency(plan.totalAmount)}</p>
                       </div>
                       <div>
                         <p className="text-blue-300 text-xs uppercase tracking-widest mb-1">Restant</p>
-                        <p className="text-2xl font-bold text-yellow-500">{plan.remainingAmount.toLocaleString()} €</p>
+                        <p className="text-2xl font-bold text-yellow-500">{formatCurrency(plan.remainingAmount)}</p>
                       </div>
                       <div>
                         <p className="text-blue-300 text-xs uppercase tracking-widest mb-1">Mensualités</p>
@@ -250,7 +250,7 @@ const PaymentList = ({ planId }: { planId: string }) => {
               {payment.status === 'completed' ? <CheckCircle size={20} /> : <Clock size={20} />}
             </div>
             <div>
-              <p className="font-bold text-blue-900">{payment.amount.toLocaleString()} €</p>
+              <p className="font-bold text-blue-900">{formatCurrency(payment.amount)}</p>
               <p className="text-xs text-gray-400">{format(payment.date.toDate(), 'd MMMM yyyy', { locale: fr })}</p>
             </div>
           </div>

@@ -7,6 +7,7 @@ import { useCart } from '../CartContext';
 import { ShoppingCart, ArrowLeft, Plus, Minus, CheckCircle, Package, ShieldCheck, Truck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
+import { formatCurrency } from '../lib/utils';
 
 const ItemDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -82,7 +83,7 @@ const ItemDetail = () => {
             <span className="text-yellow-500 font-bold tracking-widest text-sm uppercase mb-2 block">Collection Exclusive</span>
             <h1 className="text-4xl md:text-5xl font-bold text-blue-900 mb-4">{item.name}</h1>
             <div className="flex items-center gap-4 mb-6">
-              <span className="text-3xl font-bold text-blue-900">{item.price.toLocaleString()} €</span>
+              <span className="text-3xl font-bold text-blue-900">{formatCurrency(item.price)}</span>
               <span className={item.stock > 0 ? "bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium" : "bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium"}>
                 {item.stock > 0 ? `${item.stock} en stock` : "Rupture de stock"}
               </span>

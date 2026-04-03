@@ -7,6 +7,7 @@ import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package } from 'lucid
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { formatCurrency } from '../lib/utils';
 
 const Home = () => {
   const [items, setItems] = useState<Item[]>([]);
@@ -37,28 +38,28 @@ const Home = () => {
       {
         name: "Réfrigérateur Sub-Zero Pro 48",
         description: "Le summum de la conservation alimentaire avec un design industriel en acier inoxydable.",
-        price: 12500,
+        price: 8200000,
         imageUrl: "https://picsum.photos/seed/fridge/800/600",
         stock: 5
       },
       {
         name: "Piano de Cuisson La Cornue Château 150",
         description: "Fabriqué à la main sur commande, une pièce maîtresse pour toute cuisine de luxe.",
-        price: 45000,
+        price: 29500000,
         imageUrl: "https://picsum.photos/seed/stove/800/600",
         stock: 2
       },
       {
         name: "Lave-vaisselle Miele Diamond Series",
         description: "Silence absolu et performance de nettoyage inégalée pour vos cristaux les plus précieux.",
-        price: 3200,
+        price: 2100000,
         imageUrl: "https://picsum.photos/seed/dishwasher/800/600",
         stock: 10
       },
       {
         name: "Machine à Café Intégrée Gaggenau 400",
         description: "L'art de l'espresso parfait, intégré harmonieusement dans votre cuisine.",
-        price: 4800,
+        price: 3150000,
         imageUrl: "https://picsum.photos/seed/coffee/800/600",
         stock: 8
       }
@@ -167,7 +168,7 @@ const Home = () => {
                 referrerPolicy="no-referrer"
               />
               <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-blue-900 font-bold text-sm">
-                {item.price.toLocaleString()} €
+                {formatCurrency(item.price)}
               </div>
             </Link>
             <div className="p-6">

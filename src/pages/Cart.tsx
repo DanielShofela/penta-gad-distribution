@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { toast } from 'sonner';
+import { formatCurrency } from '../lib/utils';
 
 const Cart = () => {
   const { cart, removeFromCart, updateQuantity, total } = useCart();
@@ -63,7 +64,7 @@ const Cart = () => {
                 <div className="flex-grow text-center sm:text-left">
                   <h3 className="text-lg font-bold text-blue-900 mb-1">{item.name}</h3>
                   <p className="text-gray-500 text-sm mb-2 line-clamp-1">{item.description}</p>
-                  <div className="text-blue-900 font-bold">{item.price.toLocaleString()} €</div>
+                  <div className="text-blue-900 font-bold">{formatCurrency(item.price)}</div>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center border border-gray-100 rounded-lg p-1 bg-gray-50">
@@ -103,7 +104,7 @@ const Cart = () => {
             <div className="space-y-4 mb-8">
               <div className="flex justify-between opacity-80">
                 <span>Sous-total</span>
-                <span>{total.toLocaleString()} €</span>
+                <span>{formatCurrency(total)}</span>
               </div>
               <div className="flex justify-between opacity-80">
                 <span>Livraison Premium</span>
@@ -111,7 +112,7 @@ const Cart = () => {
               </div>
               <div className="border-t border-blue-800 pt-4 flex justify-between text-xl font-bold">
                 <span>Total</span>
-                <span className="text-yellow-500">{total.toLocaleString()} €</span>
+                <span className="text-yellow-500">{formatCurrency(total)}</span>
               </div>
             </div>
 

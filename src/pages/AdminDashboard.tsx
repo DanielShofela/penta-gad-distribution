@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { cn } from '../lib/utils';
+import { cn, formatCurrency } from '../lib/utils';
 
 const AdminDashboard = () => {
   const { isAdmin, loading: authLoading } = useAuth();
@@ -102,7 +102,7 @@ const AdminOverview = () => {
   }, []);
 
   const statCards = [
-    { label: "Ventes Totales", value: `${stats.totalSales.toLocaleString()} €`, icon: DollarSign, color: "bg-green-500" },
+    { label: "Ventes Totales", value: formatCurrency(stats.totalSales), icon: DollarSign, color: "bg-green-500" },
     { label: "Commandes", value: stats.ordersCount, icon: ShoppingCart, color: "bg-blue-500" },
     { label: "Articles", value: stats.itemsCount, icon: Package, color: "bg-yellow-500" },
     { label: "Clients", value: stats.usersCount, icon: Users, color: "bg-purple-500" },
@@ -218,7 +218,7 @@ const AdminItems = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-gray-400 mb-1">Prix (€)</label>
+                    <label className="block text-sm font-bold text-gray-400 mb-1">Prix (FCFA)</label>
                     <input name="price" type="number" defaultValue={editingItem?.price} required className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" />
                   </div>
                   <div>
@@ -246,7 +246,7 @@ const AdminItems = () => {
             <img src={item.imageUrl} alt="" className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />
             <div className="flex-grow min-w-0">
               <h4 className="font-bold text-blue-900 truncate">{item.name}</h4>
-              <p className="text-sm text-gray-400">{item.price.toLocaleString()} € • Stock: {item.stock}</p>
+              <p className="text-sm text-gray-400">{formatCurrency(item.price)} • Stock: {item.stock}</p>
             </div>
             <div className="flex flex-col gap-2">
               <button onClick={() => setEditingItem(item)} className="p-2 text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"><Edit2 size={18} /></button>
@@ -291,7 +291,7 @@ const AdminOrders = () => {
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="font-bold text-blue-900">{order.totalAmount.toLocaleString()} €</p>
+                  <p className="font-bold text-blue-900">{formatCurrency(order.totalAmount)}</p>
                   <p className="text-xs text-gray-400 uppercase">{order.paymentType}</p>
                 </div>
                 <select 
@@ -363,7 +363,7 @@ const AdminPayments = () => {
                 <p className="text-xs text-gray-400">Commande #{plan.orderId.slice(0, 8)}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-bold text-blue-900">Restant: {plan.remainingAmount.toLocaleString()} € / {plan.totalAmount.toLocaleString()} €</p>
+                <p className="text-sm font-bold text-blue-900">Restant: {formatCurrency(plan.remainingAmount)} / {formatCurrency(plan.totalAmount)}</p>
                 <div className="w-48 h-2 bg-gray-200 rounded-full mt-2 overflow-hidden">
                   <div 
                     className="h-full bg-yellow-500 transition-all" 
@@ -399,7 +399,7 @@ const AdminPayments = () => {
                     className="mb-6 p-4 bg-blue-50 rounded-2xl flex gap-4 items-end"
                   >
                     <div className="flex-grow">
-                      <label className="block text-xs font-bold text-blue-900 mb-1">Montant du versement (€)</label>
+                      <label className="block text-xs font-bold text-blue-900 mb-1">Montant du versement (FCFA)</label>
                       <input name="amount" type="number" defaultValue={plan.totalAmount / plan.installmentsCount} required className="w-full p-2 rounded-lg border border-blue-200 outline-none" />
                     </div>
                     <button type="submit" className="bg-blue-900 text-white px-6 py-2 rounded-lg font-bold">Valider</button>
@@ -492,7 +492,7 @@ const PaymentList = ({ planId }: { planId: string }) => {
         <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl text-sm">
           <div className="flex items-center gap-3">
             <CheckCircle size={16} className="text-green-500" />
-            <span className="font-bold text-blue-900">{payment.amount.toLocaleString()} €</span>
+            <span className="font-bold text-blue-900">{formatCurrency(payment.amount)}</span>
             <span className="text-gray-400">{format(payment.date.toDate(), 'd MMM yyyy', { locale: fr })}</span>
           </div>
           <span className="text-xs font-bold text-green-600 uppercase">Effectué</span>

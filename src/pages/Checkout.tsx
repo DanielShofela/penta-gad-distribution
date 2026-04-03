@@ -8,7 +8,7 @@ import { CreditCard, Banknote, ShieldCheck, ChevronRight, CheckCircle, Package, 
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { cn } from '../lib/utils';
+import { cn, formatCurrency } from '../lib/utils';
 
 const Checkout = () => {
   const { cart, total, clearCart } = useCart();
@@ -181,9 +181,9 @@ const Checkout = () => {
               >
                 <p className="font-bold mb-1">Détails du plan :</p>
                 <ul className="list-disc list-inside space-y-1">
-                  <li>Montant mensuel : {(total / 10).toLocaleString()} €</li>
+                  <li>Montant mensuel : {formatCurrency(total / 10)}</li>
                   <li>Durée : 10 mois</li>
-                  <li>Frais de dossier : 0 €</li>
+                  <li>Frais de dossier : {formatCurrency(0)}</li>
                 </ul>
               </motion.div>
             )}
@@ -201,14 +201,14 @@ const Checkout = () => {
                     <span className="font-bold text-blue-900">{item.quantity}x</span>
                     <span className="text-gray-600 line-clamp-1">{item.name}</span>
                   </div>
-                  <span className="font-bold text-blue-900">{(item.price * item.quantity).toLocaleString()} €</span>
+                  <span className="font-bold text-blue-900">{formatCurrency(item.price * item.quantity)}</span>
                 </div>
               ))}
             </div>
             <div className="border-t border-gray-100 pt-4 space-y-2 mb-8">
               <div className="flex justify-between text-gray-400">
                 <span>Sous-total</span>
-                <span>{total.toLocaleString()} €</span>
+                <span>{formatCurrency(total)}</span>
               </div>
               <div className="flex justify-between text-gray-400">
                 <span>Livraison</span>
@@ -216,7 +216,7 @@ const Checkout = () => {
               </div>
               <div className="flex justify-between text-xl font-bold text-blue-900 pt-2">
                 <span>Total</span>
-                <span>{total.toLocaleString()} €</span>
+                <span>{formatCurrency(total)}</span>
               </div>
             </div>
 
