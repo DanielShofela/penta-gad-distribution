@@ -65,9 +65,22 @@
         "status": { "type": "string", "enum": ["pending", "completed"] }
       },
       "required": ["paymentPlanId", "amount", "date", "status"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Global application settings",
+      "type": "object",
+      "properties": {
+        "logoUrl": { "type": "string" },
+        "siteName": { "type": "string" }
+      }
     }
   },
   "firestore": {
+    "/settings/{settingId}": {
+      "schema": "Settings",
+      "description": "Global settings"
+    },
     "/users/{userId}": {
       "schema": "User",
       "description": "User profiles"

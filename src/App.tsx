@@ -10,7 +10,7 @@ import { cn } from './lib/utils';
 // --- Components ---
 
 const Navbar = () => {
-  const { user, profile, login, logout, isAdmin } = useAuth();
+  const { user, profile, login, logout, isAdmin, settings } = useAuth();
   const { cart } = useCart();
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -22,8 +22,12 @@ const Navbar = () => {
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center gap-2">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-blue-900 rounded-lg flex items-center justify-center text-yellow-500 font-bold text-xl">P</div>
-              <span className="text-xl font-bold text-blue-900 hidden sm:block">PENTA GAD</span>
+              {settings?.logoUrl ? (
+                <img src={settings.logoUrl} alt="Logo" className="h-10 w-auto object-contain" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="w-10 h-10 bg-blue-900 rounded-lg flex items-center justify-center text-yellow-500 font-bold text-xl">P</div>
+              )}
+              <span className="text-xl font-bold text-blue-900 hidden sm:block">{settings?.siteName || "PENTA GAD"}</span>
             </Link>
           </div>
 
@@ -128,43 +132,50 @@ const Navbar = () => {
   );
 };
 
-const Footer = () => (
-  <footer className="bg-blue-900 text-white py-12">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 bg-white rounded flex items-center justify-center text-blue-900 font-bold">P</div>
-            <span className="text-xl font-bold text-yellow-500">PENTA GAD</span>
+const Footer = () => {
+  const { settings } = useAuth();
+  return (
+    <footer className="bg-blue-900 text-white py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              {settings?.logoUrl ? (
+                <img src={settings.logoUrl} alt="Logo" className="h-8 w-auto object-contain brightness-0 invert" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="w-8 h-8 bg-white rounded flex items-center justify-center text-blue-900 font-bold">P</div>
+              )}
+              <span className="text-xl font-bold text-yellow-500">{settings?.siteName || "PENTA GAD"}</span>
+            </div>
+            <p className="text-blue-100 opacity-80">
+              L'excellence de l'électroménager de luxe à votre portée. Qualité, design et innovation.
+            </p>
           </div>
-          <p className="text-blue-100 opacity-80">
-            L'excellence de l'électroménager de luxe à votre portée. Qualité, design et innovation.
-          </p>
+          <div>
+            <h3 className="text-lg font-bold mb-4 text-yellow-500">Liens Rapides</h3>
+            <ul className="space-y-2 text-blue-100 opacity-80">
+              <li><Link to="/">Catalogue</Link></li>
+              <li>À propos</li>
+              <li>Contact</li>
+              <li>Conditions de vente</li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold mb-4 text-yellow-500">Contact</h3>
+            <p className="text-blue-100 opacity-80">
+              8WMR+39 Abidjan.<br />
+              Cité sgbci, Abidjan<br />
+              pentagad.distribution@gmail.com
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-lg font-bold mb-4 text-yellow-500">Liens Rapides</h3>
-          <ul className="space-y-2 text-blue-100 opacity-80">
-            <li><Link to="/">Catalogue</Link></li>
-            <li>À propos</li>
-            <li>Contact</li>
-            <li>Conditions de vente</li>
-          </ul>
-        </div>
-        <div>
-          <h3 className="text-lg font-bold mb-4 text-yellow-500">Contact</h3>
-          <p className="text-blue-100 opacity-80">
-            8WMR+39 Abidjan.<br />
-            Cité sgbci, Abidjan<br />
-            pentagad.distribution@gmail.com
-          </p>
+        <div className="border-t border-blue-800 mt-12 pt-8 text-center text-blue-200 text-sm">
+          © 2026 {settings?.siteName || "PENTA GAD"}. Tous droits réservés.
         </div>
       </div>
-      <div className="border-t border-blue-800 mt-12 pt-8 text-center text-blue-200 text-sm">
-        © 2026 PENTA GAD. Tous droits réservés.
-      </div>
-    </div>
-  </footer>
-);
+    </footer>
+  );
+};
 
 // --- Pages ---
 

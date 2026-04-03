@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import { collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, doc, orderBy, Timestamp, where, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, doc, orderBy, Timestamp, where, getDocs, setDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item, Order, PaymentPlan, UserProfile, Payment } from '../types';
-import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Plus, Trash2, Edit2, CheckCircle, Clock, AlertCircle, ChevronRight, Search, TrendingUp, DollarSign, PackageCheck } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Plus, Trash2, Edit2, CheckCircle, Clock, AlertCircle, ChevronRight, Search, TrendingUp, DollarSign, PackageCheck, Settings as SettingsIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -32,6 +32,7 @@ const AdminDashboard = () => {
     { to: "/admin/orders", icon: ShoppingCart, label: "Commandes" },
     { to: "/admin/payments", icon: CreditCard, label: "Paiements" },
     { to: "/admin/users", icon: Users, label: "Utilisateurs" },
+    { to: "/admin/settings", icon: SettingsIcon, label: "Paramètres" },
   ];
 
   return (
@@ -70,6 +71,7 @@ const AdminDashboard = () => {
             <Route path="orders" element={<AdminOrders />} />
             <Route path="payments" element={<AdminPayments />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="settings" element={<AdminSettings />} />
           </Routes>
         </main>
       </div>
@@ -461,6 +463,78 @@ const AdminUsers = () => {
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+};
+
+const AdminSettings = () => {
+  const { settings } = useAuth();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSaving(true);
+    const formData = new FormData(e.currentTarget);
+    const newSettings = {
+      logoUrl: formData.get('logoUrl') as string,
+      siteName: formData.get('siteName') as string,
+    };
+
+    try {
+      await setDoc(doc(db, 'settings', 'global'), newSettings);
+      toast.success("Paramètres mis à jour");
+    } catch (error) {
+      toast.error("Erreur lors de l'enregistrement");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-blue-900">Paramètres du Site</h2>
+      <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+        <form onSubmit={handleSaveSettings} className="max-w-2xl space-y-6">
+          <div>
+            <label className="block text-sm font-bold text-gray-400 mb-1">Nom du Site</label>
+            <input 
+              name="siteName" 
+              defaultValue={settings?.siteName || "PENTA GAD"} 
+              required 
+              className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" 
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-400 mb-1">URL du Logo</label>
+            <input 
+              name="logoUrl" 
+              defaultValue={settings?.logoUrl} 
+              placeholder="https://exemple.com/logo.png"
+              className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" 
+            />
+            <p className="mt-2 text-xs text-gray-400 italic">
+              Laissez vide pour utiliser le logo par défaut.
+            </p>
+          </div>
+          
+          {settings?.logoUrl && (
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 inline-block">
+              <p className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Aperçu du logo :</p>
+              <img src={settings.logoUrl} alt="Preview" className="h-12 w-auto object-contain" referrerPolicy="no-referrer" />
+            </div>
+          )}
+
+          <div className="pt-4">
+            <button 
+              type="submit" 
+              disabled={isSaving}
+              className="bg-blue-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800 transition-all disabled:bg-gray-300"
+            >
+              {isSaving ? "Enregistrement..." : "Enregistrer les modifications"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

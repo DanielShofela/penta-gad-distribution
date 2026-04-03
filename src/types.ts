@@ -64,3 +64,8 @@ export interface Payment {
 export interface CartItem extends Item {
   quantity: number;
 }
+
+export interface Settings {
+  logoUrl?: string;
+  siteName?: string;
+}
