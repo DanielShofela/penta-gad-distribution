@@ -155,6 +155,7 @@ const AdminItems = () => {
       description: formData.get('description') as string,
       price: Number(formData.get('price')),
       stock: Number(formData.get('stock')),
+      category: formData.get('category') as string,
       imageUrl: formData.get('imageUrl') as string || `https://picsum.photos/seed/${Math.random()}/800/600`
     };
 
@@ -229,6 +230,24 @@ const AdminItems = () => {
                   </div>
                 </div>
                 <div>
+                  <label className="block text-sm font-bold text-gray-400 mb-1">Catégorie</label>
+                  <select name="category" defaultValue={editingItem?.category} required className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900">
+                    <option value="">Sélectionner une catégorie</option>
+                    <optgroup label="Électroménagers">
+                      <option value="refrigerateurs">Réfrigérateurs</option>
+                      <option value="fours">Fours & Cuisson</option>
+                      <option value="lave-vaisselle">Lave-vaisselle</option>
+                      <option value="petit-electromenager">Petit Électroménager</option>
+                    </optgroup>
+                    <optgroup label="Meubles">
+                      <option value="salons">Salons</option>
+                      <option value="chambres">Chambres à coucher</option>
+                      <option value="salles-a-manger">Salles à manger</option>
+                      <option value="decoration">Décoration</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div>
                   <label className="block text-sm font-bold text-gray-400 mb-1">URL de l'image (optionnel)</label>
                   <input name="imageUrl" defaultValue={editingItem?.imageUrl} className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" />
                 </div>
@@ -249,6 +268,7 @@ const AdminItems = () => {
             <div className="flex-grow min-w-0">
               <h4 className="font-bold text-blue-900 truncate">{item.name}</h4>
               <p className="text-sm text-gray-400">{formatCurrency(item.price)} • Stock: {item.stock}</p>
+              {item.category && <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold uppercase">{item.category}</span>}
             </div>
             <div className="flex flex-col gap-2">
               <button onClick={() => setEditingItem(item)} className="p-2 text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"><Edit2 size={18} /></button>

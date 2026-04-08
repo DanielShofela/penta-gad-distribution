@@ -17,6 +17,7 @@ export interface Item {
   price: number;
   imageUrl: string;
   stock: number;
+  category?: string;
 }
 
 export interface OrderItem {

@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react
 import { AuthProvider, useAuth } from './AuthContext';
 import { CartProvider, useCart } from './CartContext';
 import { Toaster } from 'sonner';
-import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 
@@ -27,13 +27,42 @@ const Navbar = () => {
               ) : (
                 <div className="w-10 h-10 bg-blue-900 rounded-lg flex items-center justify-center text-yellow-500 font-bold text-xl">P</div>
               )}
-              <span className="text-xl font-bold text-blue-900 hidden sm:block">{settings?.siteName || "PENTA GAD"}</span>
+              <span className="text-lg sm:text-xl font-bold text-blue-900">{settings?.siteName || "PENTA GAD"}</span>
             </Link>
           </div>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/" className="text-gray-600 hover:text-blue-900 font-medium">Catalogue</Link>
+            <div className="relative group">
+              <button className="flex items-center gap-1 text-gray-600 hover:text-blue-900 font-medium py-2">
+                Articles <ChevronDown size={16} />
+              </button>
+              <div className="absolute left-0 mt-0 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <h4 className="font-bold text-blue-900 mb-2 text-xs uppercase tracking-wider">Électroménagers</h4>
+                    <ul className="space-y-1">
+                      <li><Link to="/?category=refrigerateurs" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Réfrigérateurs</Link></li>
+                      <li><Link to="/?category=fours" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Fours & Cuisson</Link></li>
+                      <li><Link to="/?category=lave-vaisselle" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Lave-vaisselle</Link></li>
+                      <li><Link to="/?category=petit-electromenager" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Petit Électroménager</Link></li>
+                    </ul>
+                  </div>
+                  <div className="border-t border-gray-50 pt-3">
+                    <h4 className="font-bold text-blue-900 mb-2 text-xs uppercase tracking-wider">Meubles</h4>
+                    <ul className="space-y-1">
+                      <li><Link to="/?category=salons" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Salons</Link></li>
+                      <li><Link to="/?category=chambres" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Chambres à coucher</Link></li>
+                      <li><Link to="/?category=salles-a-manger" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Salles à manger</Link></li>
+                      <li><Link to="/?category=decoration" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Décoration</Link></li>
+                    </ul>
+                  </div>
+                  <div className="border-t border-gray-50 pt-3">
+                    <Link to="/" className="text-sm font-bold text-blue-900 hover:underline">Tout le catalogue</Link>
+                  </div>
+                </div>
+              </div>
+            </div>
             {user ? (
               <>
                 <Link to={isAdmin ? "/admin" : "/dashboard"} className="text-gray-600 hover:text-blue-900 font-medium">
@@ -108,8 +137,18 @@ const Navbar = () => {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden bg-white border-t border-gray-100 overflow-hidden"
           >
-            <div className="px-4 py-4 space-y-4">
-              <Link to="/" onClick={() => setIsOpen(false)} className="block text-gray-600 font-medium">Catalogue</Link>
+            <div className="px-4 py-4 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase mb-2">Articles</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link to="/?category=refrigerateurs" onClick={() => setIsOpen(false)} className="text-sm text-gray-600 py-1">Réfrigérateurs</Link>
+                  <Link to="/?category=fours" onClick={() => setIsOpen(false)} className="text-sm text-gray-600 py-1">Fours</Link>
+                  <Link to="/?category=lave-vaisselle" onClick={() => setIsOpen(false)} className="text-sm text-gray-600 py-1">Lave-vaisselle</Link>
+                  <Link to="/?category=salons" onClick={() => setIsOpen(false)} className="text-sm text-gray-600 py-1">Salons</Link>
+                  <Link to="/?category=chambres" onClick={() => setIsOpen(false)} className="text-sm text-gray-600 py-1">Chambres</Link>
+                  <Link to="/" onClick={() => setIsOpen(false)} className="text-sm font-bold text-blue-900 py-1">Tout voir</Link>
+                </div>
+              </div>
               {user ? (
                 <>
                   <Link to={isAdmin ? "/admin" : "/dashboard"} onClick={() => setIsOpen(false)} className="block text-gray-600 font-medium">
@@ -156,7 +195,7 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-bold mb-4 text-yellow-500">Liens Rapides</h3>
             <ul className="space-y-2 text-blue-100 opacity-80">
-              <li><Link to="/">Catalogue</Link></li>
+              <li><Link to="/">Articles</Link></li>
               <li>À propos</li>
               <li>Contact</li>
               <li>Conditions de vente</li>

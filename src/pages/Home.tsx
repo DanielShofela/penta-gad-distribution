@@ -5,7 +5,7 @@ import { Item } from '../types';
 import { useCart } from '../CartContext';
 import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { formatCurrency } from '../lib/utils';
 
@@ -14,6 +14,9 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const { addToCart } = useCart();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const categoryFilter = queryParams.get('category');
 
   useEffect(() => {
     const q = query(collection(db, 'items'));
@@ -28,10 +31,14 @@ const Home = () => {
     return () => unsubscribe();
   }, []);
 
-  const filteredItems = items.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredItems = items.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = !categoryFilter || item.category === categoryFilter;
+    
+    return matchesSearch && matchesCategory;
+  });
 
   const seedData = async () => {
     const initialItems = [
@@ -40,28 +47,32 @@ const Home = () => {
         description: "Le summum de la conservation alimentaire avec un design industriel en acier inoxydable.",
         price: 8200000,
         imageUrl: "https://picsum.photos/seed/fridge/800/600",
-        stock: 5
+        stock: 5,
+        category: "refrigerateurs"
       },
       {
         name: "Piano de Cuisson La Cornue Château 150",
         description: "Fabriqué à la main sur commande, une pièce maîtresse pour toute cuisine de luxe.",
         price: 29500000,
         imageUrl: "https://picsum.photos/seed/stove/800/600",
-        stock: 2
+        stock: 2,
+        category: "fours"
       },
       {
         name: "Lave-vaisselle Miele Diamond Series",
         description: "Silence absolu et performance de nettoyage inégalée pour vos cristaux les plus précieux.",
         price: 2100000,
         imageUrl: "https://picsum.photos/seed/dishwasher/800/600",
-        stock: 10
+        stock: 10,
+        category: "lave-vaisselle"
       },
       {
         name: "Machine à Café Intégrée Gaggenau 400",
         description: "L'art de l'espresso parfait, intégré harmonieusement dans votre cuisine.",
         price: 3150000,
         imageUrl: "https://picsum.photos/seed/coffee/800/600",
-        stock: 8
+        stock: 8,
+        category: "petit-electromenager"
       }
     ];
 
@@ -72,6 +83,20 @@ const Home = () => {
       toast.success("Données initiales ajoutées !");
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'items');
+    }
+  };
+
+  const getCategoryTitle = () => {
+    switch (categoryFilter) {
+      case 'refrigerateurs': return 'Réfrigérateurs';
+      case 'fours': return 'Fours & Cuisson';
+      case 'lave-vaisselle': return 'Lave-vaisselle';
+      case 'petit-electromenager': return 'Petit Électroménager';
+      case 'salons': return 'Salons';
+      case 'chambres': return 'Chambres à coucher';
+      case 'salles-a-manger': return 'Salles à manger';
+      case 'decoration': return 'Décoration';
+      default: return 'Notre Collection';
     }
   };
 
@@ -115,6 +140,7 @@ const Home = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
+            onClick={() => document.getElementById('articles-section')?.scrollIntoView({ behavior: 'smooth' })}
             className="bg-yellow-500 text-blue-900 px-8 py-3 rounded-full font-bold hover:bg-yellow-400 transition-colors flex items-center gap-2"
           >
             Explorer la Collection <ChevronRight size={20} />
@@ -123,16 +149,19 @@ const Home = () => {
       </div>
 
       {/* Search and Filter */}
-      <div className="flex flex-col md:flex-row gap-4 mb-8 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input 
-            type="text" 
-            placeholder="Rechercher un appareil..." 
-            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-900 focus:border-transparent outline-none transition-all"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div id="articles-section" className="flex flex-col md:flex-row gap-4 mb-8 items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h2 className="text-2xl font-bold text-blue-900 whitespace-nowrap">{getCategoryTitle()}</h2>
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input 
+              type="text" 
+              placeholder="Rechercher..." 
+              className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-900 focus:border-transparent outline-none transition-all text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
         <div className="flex gap-2">
           {items.length === 0 && (
