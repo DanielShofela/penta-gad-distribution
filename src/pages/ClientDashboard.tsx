@@ -1,20 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../AuthContext';
-import { collection, query, where, onSnapshot, orderBy, Timestamp } from 'firebase/firestore';
+import { useSearchParams } from 'react-router-dom';
+import { collection, query, where, onSnapshot, orderBy, Timestamp, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Order, PaymentPlan, Payment } from '../types';
-import { Package, CreditCard, Clock, CheckCircle, ChevronRight, AlertCircle, Calendar, ArrowRight } from 'lucide-react';
+import { Package, CreditCard, Clock, CheckCircle, ChevronRight, AlertCircle, Calendar, ArrowRight, Trash2, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn, formatCurrency } from '../lib/utils';
+import { toast } from 'sonner';
 
 const ClientDashboard = () => {
   const { user, profile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [paymentPlans, setPaymentPlans] = useState<PaymentPlan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'payments'>('orders');
+  const initialTab = (searchParams.get('tab') as 'orders' | 'payments') || 'orders';
+  const [activeTab, setActiveTab] = useState<'orders' | 'payments'>(initialTab);
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl === 'orders' || tabFromUrl === 'payments') {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab: 'orders' | 'payments') => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -45,6 +61,26 @@ const ClientDashboard = () => {
     };
   }, [user]);
 
+  const cancelOrder = async (orderId: string) => {
+    if (!window.confirm("Voulez-vous vraiment annuler cette commande ?")) return;
+    try {
+      await updateDoc(doc(db, 'orders', orderId), { status: 'cancelled' });
+      toast.success("Commande annulée avec succès");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
+    }
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    if (!window.confirm("Voulez-vous vraiment supprimer cette commande ? Cette action est irréversible.")) return;
+    try {
+      await deleteDoc(doc(db, 'orders', orderId));
+      toast.success("Commande supprimée");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `orders/${orderId}`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -69,7 +105,7 @@ const ClientDashboard = () => {
         </div>
         <div className="flex bg-white p-1 rounded-2xl border border-gray-100 shadow-sm self-start">
           <button 
-            onClick={() => setActiveTab('orders')}
+            onClick={() => handleTabChange('orders')}
             className={cn(
               "px-6 py-2 rounded-xl font-bold transition-all flex items-center gap-2",
               activeTab === 'orders' ? "bg-blue-900 text-white shadow-lg" : "text-gray-400 hover:text-blue-900"
@@ -79,7 +115,7 @@ const ClientDashboard = () => {
             Commandes
           </button>
           <button 
-            onClick={() => setActiveTab('payments')}
+            onClick={() => handleTabChange('payments')}
             className={cn(
               "px-6 py-2 rounded-xl font-bold transition-all flex items-center gap-2",
               activeTab === 'payments' ? "bg-blue-900 text-white shadow-lg" : "text-gray-400 hover:text-blue-900"
@@ -127,22 +163,47 @@ const ClientDashboard = () => {
                         <div className="text-xs text-gray-400 uppercase tracking-wider">{order.paymentType === 'cash' ? 'Paiement Cash' : 'Paiement Échelonné'}</div>
                       </div>
                       <div className={cn(
-                        "px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider",
+                        "px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider h-fit",
                         order.status === 'pending' ? "bg-yellow-100 text-yellow-700" :
                         order.status === 'confirmed' ? "bg-blue-100 text-blue-700" :
-                        order.status === 'delivered' ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
+                        order.status === 'delivered' ? "bg-green-100 text-green-700" : 
+                        order.status === 'cancelled' ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-700"
                       )}>
                         {order.status}
                       </div>
                     </div>
                   </div>
-                  <div className="border-t border-gray-50 pt-4 flex flex-wrap gap-4">
-                    {order.items.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-lg text-sm text-gray-600">
-                        <span className="font-bold text-blue-900">{item.quantity}x</span>
-                        <span>{item.name}</span>
-                      </div>
-                    ))}
+                  <div className="border-t border-gray-50 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="flex flex-wrap gap-4">
+                      {order.items.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-lg text-sm text-gray-600">
+                          <span className="font-bold text-blue-900">{item.quantity}x</span>
+                          <span>{item.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      {(order.status === 'pending' || order.status === 'confirmed') && (
+                        <button 
+                          onClick={() => cancelOrder(order.id)}
+                          className="flex items-center gap-1 text-xs font-bold text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors border border-red-100"
+                        >
+                          <XCircle size={14} />
+                          Annuler
+                        </button>
+                      )}
+                      
+                      {order.status === 'cancelled' && (
+                        <button 
+                          onClick={() => deleteOrder(order.id)}
+                          className="flex items-center gap-1 text-xs font-bold text-gray-500 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors border border-gray-100"
+                        >
+                          <Trash2 size={14} />
+                          Supprimer
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))
@@ -175,18 +236,35 @@ const ClientDashboard = () => {
                         {plan.status === 'active' ? 'EN COURS' : 'TERMINÉ'}
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-8">
                       <div>
-                        <p className="text-blue-300 text-xs uppercase tracking-widest mb-1">Total</p>
+                        <p className="text-blue-300 text-xs uppercase tracking-widest mb-1">Total à payer</p>
                         <p className="text-2xl font-bold">{formatCurrency(plan.totalAmount)}</p>
                       </div>
                       <div>
-                        <p className="text-blue-300 text-xs uppercase tracking-widest mb-1">Restant</p>
-                        <p className="text-2xl font-bold text-yellow-500">{formatCurrency(plan.remainingAmount)}</p>
+                        <p className="text-blue-300 text-xs uppercase tracking-widest mb-1">Déjà payé</p>
+                        <p className="text-2xl font-bold text-green-400">{formatCurrency(plan.totalAmount - plan.remainingAmount)}</p>
                       </div>
                       <div>
-                        <p className="text-blue-300 text-xs uppercase tracking-widest mb-1">Mensualités</p>
-                        <p className="text-2xl font-bold">{plan.installmentsCount} mois</p>
+                        <p className="text-blue-300 text-xs uppercase tracking-widest mb-1">Solde Restant</p>
+                        <p className="text-2xl font-bold text-yellow-500">{formatCurrency(plan.remainingAmount)}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-end">
+                        <p className="text-blue-200 text-xs font-bold uppercase tracking-wider">Progression du paiement</p>
+                        <p className="text-xl font-black text-white">
+                          {Math.round(((plan.totalAmount - plan.remainingAmount) / plan.totalAmount) * 100)}%
+                        </p>
+                      </div>
+                      <div className="h-4 bg-white/10 rounded-full overflow-hidden border border-white/10 p-1 backdrop-blur-sm">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${((plan.totalAmount - plan.remainingAmount) / plan.totalAmount) * 100}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                          className="h-full bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full shadow-[0_0_15px_rgba(234,179,8,0.4)]"
+                        />
                       </div>
                     </div>
                   </div>

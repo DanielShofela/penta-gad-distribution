@@ -8,6 +8,8 @@ export interface UserProfile {
   role: UserRole;
   displayName: string;
   photoURL: string;
+  address?: string;
+  phone?: string;
 }
 
 export interface Item {
@@ -28,11 +30,15 @@ export interface OrderItem {
 }
 
 export type PaymentType = 'cash' | 'installment';
-export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered';
+export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 
 export interface Order {
   id: string;
   clientId: string;
+  clientName: string;
+  clientEmail: string;
+  clientAddress: string;
+  clientPhone: string;
   items: OrderItem[];
   totalAmount: number;
   paymentType: PaymentType;
@@ -46,6 +52,7 @@ export interface PaymentPlan {
   id: string;
   orderId: string;
   clientId: string;
+  clientName: string;
   totalAmount: number;
   remainingAmount: number;
   installmentsCount: number;

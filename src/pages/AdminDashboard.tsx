@@ -4,12 +4,14 @@ import { useAuth } from '../AuthContext';
 import { collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, doc, orderBy, Timestamp, where, getDocs, setDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item, Order, PaymentPlan, UserProfile, Payment } from '../types';
+import { CATEGORY_GROUPS } from '../constants';
 import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Plus, Trash2, Edit2, CheckCircle, Clock, AlertCircle, ChevronRight, Search, TrendingUp, DollarSign, PackageCheck, Settings as SettingsIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn, formatCurrency } from '../lib/utils';
+import { compressImage } from '../lib/imageUtils';
 
 const AdminDashboard = () => {
   const { isAdmin, loading: authLoading } = useAuth();
@@ -89,10 +91,18 @@ const AdminOverview = () => {
     usersCount: 0
   });
 
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+
   useEffect(() => {
     const unsubOrders = onSnapshot(collection(db, 'orders'), (snap) => {
       const total = snap.docs.reduce((sum, doc) => sum + doc.data().totalAmount, 0);
       setStats(prev => ({ ...prev, totalSales: total, ordersCount: snap.size }));
+      
+      const sorted = snap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as Order))
+        .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
+        .slice(0, 5);
+      setRecentOrders(sorted);
     });
     const unsubItems = onSnapshot(collection(db, 'items'), (snap) => {
       setStats(prev => ({ ...prev, itemsCount: snap.size }));
@@ -127,9 +137,38 @@ const AdminOverview = () => {
       <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
         <h3 className="text-xl font-bold text-blue-900 mb-6 flex items-center gap-2">
           <TrendingUp size={24} className="text-green-500" />
-          Activité Récente
+          Dernières Commandes
         </h3>
-        <p className="text-gray-500 italic">Le tableau de bord analytique détaillé sera disponible prochainement.</p>
+        <div className="space-y-4">
+          {recentOrders.map(order => (
+            <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-900 shadow-sm">
+                  <ShoppingCart size={20} />
+                </div>
+                <div>
+                  <p className="font-bold text-blue-900">{order.clientName}</p>
+                  <p className="text-xs text-gray-400">#{order.id.slice(0, 8)} • {format(order.createdAt.toDate(), 'd MMM HH:mm', { locale: fr })}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-blue-900">{formatCurrency(order.totalAmount)}</p>
+                <p className={cn(
+                  "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full inline-block",
+                  order.status === 'pending' ? "bg-yellow-100 text-yellow-700" :
+                  order.status === 'confirmed' ? "bg-blue-100 text-blue-700" :
+                  order.status === 'delivered' ? "bg-green-100 text-green-700" : 
+                  order.status === 'cancelled' ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-700"
+                )}>
+                  {order.status}
+                </p>
+              </div>
+            </div>
+          ))}
+          {recentOrders.length === 0 && (
+            <p className="text-gray-500 italic text-center py-4">Aucune commande récente.</p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -139,6 +178,7 @@ const AdminItems = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [itemImagePreview, setItemImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, 'items'), orderBy('name'));
@@ -146,6 +186,30 @@ const AdminItems = () => {
       setItems(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Item)));
     });
   }, []);
+
+  useEffect(() => {
+    if (editingItem) {
+      setItemImagePreview(editingItem.imageUrl);
+    } else {
+      setItemImagePreview(null);
+    }
+  }, [editingItem, isAdding]);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit check
+        toast.error("L'image est trop volumineuse (max 5Mo)");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const compressed = await compressImage(reader.result as string);
+        setItemImagePreview(compressed);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -156,7 +220,7 @@ const AdminItems = () => {
       price: Number(formData.get('price')),
       stock: Number(formData.get('stock')),
       category: formData.get('category') as string,
-      imageUrl: formData.get('imageUrl') as string || `https://picsum.photos/seed/${Math.random()}/800/600`
+      imageUrl: itemImagePreview || `https://picsum.photos/seed/${Math.random()}/800/600`
     };
 
     try {
@@ -169,6 +233,7 @@ const AdminItems = () => {
       }
       setIsAdding(false);
       setEditingItem(null);
+      setItemImagePreview(null);
     } catch (error) {
       toast.error("Erreur lors de l'enregistrement");
     }
@@ -233,23 +298,37 @@ const AdminItems = () => {
                   <label className="block text-sm font-bold text-gray-400 mb-1">Catégorie</label>
                   <select name="category" defaultValue={editingItem?.category} required className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900">
                     <option value="">Sélectionner une catégorie</option>
-                    <optgroup label="Électroménagers">
-                      <option value="refrigerateurs">Réfrigérateurs</option>
-                      <option value="fours">Fours & Cuisson</option>
-                      <option value="lave-vaisselle">Lave-vaisselle</option>
-                      <option value="petit-electromenager">Petit Électroménager</option>
-                    </optgroup>
-                    <optgroup label="Meubles">
-                      <option value="salons">Salons</option>
-                      <option value="chambres">Chambres à coucher</option>
-                      <option value="salles-a-manger">Salles à manger</option>
-                      <option value="decoration">Décoration</option>
-                    </optgroup>
+                    {CATEGORY_GROUPS.map((group) => (
+                      <optgroup key={group.id} label={group.name}>
+                        {group.categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </optgroup>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-400 mb-1">URL de l'image (optionnel)</label>
-                  <input name="imageUrl" defaultValue={editingItem?.imageUrl} className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" />
+                  <label className="block text-sm font-bold text-gray-400 mb-1">Image de l'article</label>
+                  <div className="space-y-4">
+                    <input 
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="w-full p-2 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    {itemImagePreview && (
+                      <div className="relative group inline-block">
+                        <img src={itemImagePreview} alt="Preview" className="h-24 w-24 object-cover rounded-xl border border-gray-100 p-1" />
+                        <button 
+                          type="button"
+                          onClick={() => setItemImagePreview(null)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-4 pt-4">
                   <button type="submit" className="flex-grow bg-blue-900 text-white py-3 rounded-xl font-bold hover:bg-blue-800 transition-all">Enregistrer</button>
@@ -309,7 +388,13 @@ const AdminOrders = () => {
             <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
               <div>
                 <h4 className="font-bold text-blue-900">Commande #{order.id.slice(0, 8)}</h4>
-                <p className="text-xs text-gray-400">{format(order.createdAt.toDate(), 'Pp', { locale: fr })}</p>
+                <p className="text-xs text-gray-400 mb-2">{format(order.createdAt.toDate(), 'Pp', { locale: fr })}</p>
+                <div className="text-sm border-l-2 border-blue-100 pl-3 py-1 space-y-1">
+                  <p className="font-bold text-blue-900">{order.clientName}</p>
+                  <p className="text-gray-500">{order.clientEmail}</p>
+                  <p className="text-gray-500"><span className="font-medium text-blue-800">Tél:</span> {order.clientPhone}</p>
+                  <p className="text-gray-500"><span className="font-medium text-blue-800">Adresse:</span> {order.clientAddress}</p>
+                </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
@@ -317,7 +402,7 @@ const AdminOrders = () => {
                   <p className="text-xs text-gray-400 uppercase">{order.paymentType}</p>
                 </div>
                 <select 
-                  value={order.status}
+                  value={order.status || 'pending'}
                   onChange={(e) => updateStatus(order.id, e.target.value)}
                   className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 text-sm font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-900"
                 >
@@ -325,6 +410,7 @@ const AdminOrders = () => {
                   <option value="confirmed">Confirmée</option>
                   <option value="shipped">Expédiée</option>
                   <option value="delivered">Livrée</option>
+                  <option value="cancelled">Annulée</option>
                 </select>
               </div>
             </div>
@@ -382,6 +468,7 @@ const AdminPayments = () => {
             <div className="bg-gray-50 p-6 border-b border-gray-100 flex justify-between items-center">
               <div>
                 <h4 className="font-bold text-blue-900">Plan #{plan.id.slice(0, 8)}</h4>
+                <p className="text-sm font-bold text-blue-700">{plan.clientName}</p>
                 <p className="text-xs text-gray-400">Commande #{plan.orderId.slice(0, 8)}</p>
               </div>
               <div className="text-right">
@@ -494,17 +581,18 @@ const AdminSettings = () => {
   const [logoPreview, setLogoPreview] = useState<string | null>(settings?.logoUrl || null);
   const [faviconPreview, setFaviconPreview] = useState<string | null>(settings?.faviconUrl || null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'favicon') => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'favicon') => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 800000) { // ~800KB limit for Firestore doc size safety
-        toast.error("L'image est trop volumineuse (max 800KB)");
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit check
+        toast.error("L'image est trop volumineuse (max 5Mo)");
         return;
       }
       const reader = new FileReader();
-      reader.onloadend = () => {
-        if (type === 'logo') setLogoPreview(reader.result as string);
-        else setFaviconPreview(reader.result as string);
+      reader.onloadend = async () => {
+        const compressed = await compressImage(reader.result as string, type === 'favicon' ? 128 : 800, type === 'favicon' ? 128 : 800);
+        if (type === 'logo') setLogoPreview(compressed);
+        else setFaviconPreview(compressed);
       };
       reader.readAsDataURL(file);
     }

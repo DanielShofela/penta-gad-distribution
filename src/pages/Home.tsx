@@ -3,17 +3,20 @@ import { collection, onSnapshot, query, addDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item } from '../types';
 import { useCart } from '../CartContext';
+import { useAuth } from '../AuthContext';
 import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { formatCurrency } from '../lib/utils';
+import { getCategoryName } from '../constants';
 
 const Home = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const { addToCart } = useCart();
+  const { isAdmin } = useAuth();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const categoryFilter = queryParams.get('category');
@@ -87,17 +90,8 @@ const Home = () => {
   };
 
   const getCategoryTitle = () => {
-    switch (categoryFilter) {
-      case 'refrigerateurs': return 'Réfrigérateurs';
-      case 'fours': return 'Fours & Cuisson';
-      case 'lave-vaisselle': return 'Lave-vaisselle';
-      case 'petit-electromenager': return 'Petit Électroménager';
-      case 'salons': return 'Salons';
-      case 'chambres': return 'Chambres à coucher';
-      case 'salles-a-manger': return 'Salles à manger';
-      case 'decoration': return 'Décoration';
-      default: return 'Notre Collection';
-    }
+    if (!categoryFilter) return 'Notre Collection';
+    return getCategoryName(categoryFilter);
   };
 
   if (loading) {
@@ -211,16 +205,18 @@ const Home = () => {
                 <span className={item.stock > 0 ? "text-green-600 text-xs font-medium" : "text-red-600 text-xs font-medium"}>
                   {item.stock > 0 ? `${item.stock} en stock` : "Rupture de stock"}
                 </span>
-                <button 
-                  onClick={() => {
-                    addToCart(item);
-                    toast.success(`${item.name} ajouté au panier`);
-                  }}
-                  disabled={item.stock <= 0}
-                  className="bg-blue-900 text-white p-3 rounded-xl hover:bg-blue-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                >
-                  <Plus size={20} />
-                </button>
+                {!isAdmin && (
+                  <button 
+                    onClick={() => {
+                      addToCart(item);
+                      toast.success(`${item.name} ajouté au panier`);
+                    }}
+                    disabled={item.stock <= 0}
+                    className="bg-blue-900 text-white p-3 rounded-xl hover:bg-blue-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    <Plus size={20} />
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>

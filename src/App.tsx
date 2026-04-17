@@ -3,16 +3,24 @@ import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react
 import { AuthProvider, useAuth } from './AuthContext';
 import { CartProvider, useCart } from './CartContext';
 import { Toaster } from 'sonner';
-import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown } from 'lucide-react';
+import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
+import { CATEGORY_GROUPS } from './constants';
 
 // --- Components ---
 
 const Navbar = () => {
-  const { user, profile, login, logout, isAdmin, settings } = useAuth();
+  const { user, profile, login, logout, isAdmin, settings, isLoggingIn } = useAuth();
   const { cart } = useCart();
   const [isOpen, setIsOpen] = React.useState(false);
+  const [expandedGroups, setExpandedGroups] = React.useState<string[]>([]);
+
+  const toggleGroup = (id: string) => {
+    setExpandedGroups(prev => 
+      prev.includes(id) ? [] : [id]
+    );
+  };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -35,83 +43,131 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-6">
             <div className="relative group">
               <button className="flex items-center gap-1 text-gray-600 hover:text-blue-900 font-medium py-2">
-                Articles <ChevronDown size={16} />
+                Catalogue <ChevronDown size={16} />
               </button>
-              <div className="absolute left-0 mt-0 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <h4 className="font-bold text-blue-900 mb-2 text-xs uppercase tracking-wider">Électroménagers</h4>
-                    <ul className="space-y-1">
-                      <li><Link to="/?category=refrigerateurs" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Réfrigérateurs</Link></li>
-                      <li><Link to="/?category=fours" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Fours & Cuisson</Link></li>
-                      <li><Link to="/?category=lave-vaisselle" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Lave-vaisselle</Link></li>
-                      <li><Link to="/?category=petit-electromenager" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Petit Électroménager</Link></li>
-                    </ul>
-                  </div>
-                  <div className="border-t border-gray-50 pt-3">
-                    <h4 className="font-bold text-blue-900 mb-2 text-xs uppercase tracking-wider">Meubles</h4>
-                    <ul className="space-y-1">
-                      <li><Link to="/?category=salons" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Salons</Link></li>
-                      <li><Link to="/?category=chambres" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Chambres à coucher</Link></li>
-                      <li><Link to="/?category=salles-a-manger" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Salles à manger</Link></li>
-                      <li><Link to="/?category=decoration" className="text-sm text-gray-600 hover:text-blue-900 block py-1">Décoration</Link></li>
-                    </ul>
-                  </div>
-                  <div className="border-t border-gray-50 pt-3">
-                    <Link to="/" className="text-sm font-bold text-blue-900 hover:underline">Tout le catalogue</Link>
-                  </div>
+              <div className="absolute left-0 mt-0 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform translate-y-2 group-hover:translate-y-0 overflow-y-auto max-h-[80vh]">
+                <div className="space-y-1">
+                  {CATEGORY_GROUPS.map((group) => {
+                    const isExpanded = expandedGroups.includes(group.id);
+                    return (
+                      <div key={group.id} className="border-b border-gray-50 last:border-0">
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleGroup(group.id);
+                          }}
+                          className="flex items-center justify-between w-full py-2.5 hover:bg-gray-50 rounded-lg transition-colors px-3"
+                        >
+                          <h4 className="font-bold text-blue-900 text-[10px] uppercase tracking-widest text-left leading-tight pr-2">{group.name}</h4>
+                          <ChevronDown size={14} className={cn("text-gray-400 transition-transform flex-shrink-0", isExpanded && "rotate-180")} />
+                        </button>
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="flex flex-col gap-1 pl-6 pt-1 pb-3">
+                                {group.categories.map((cat) => (
+                                  <Link 
+                                    key={cat.id} 
+                                    to={`/?category=${cat.id}`} 
+                                    className="text-xs text-gray-500 py-1.5 hover:text-blue-900 block border-l border-gray-100 pl-3 hover:border-blue-900 transition-colors"
+                                  >
+                                    {cat.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <Link to="/" className="text-xs font-bold text-blue-900 hover:text-yellow-600 flex items-center justify-center gap-2 group/all">
+                    Tout le catalogue <ChevronRight size={14} className="group-hover/all:translate-x-1 transition-transform" />
+                  </Link>
                 </div>
               </div>
             </div>
             {user ? (
               <>
-                <Link to={isAdmin ? "/admin" : "/dashboard"} className="text-gray-600 hover:text-blue-900 font-medium">
-                  {isAdmin ? "Admin Panel" : "Mes Commandes"}
-                </Link>
                 <div className="relative group">
                   <button className="text-gray-600 hover:text-blue-900 p-2 rounded-full hover:bg-gray-50 transition-all">
                     <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
-                    <AlertCircle size={24} />
+                    <Bell size={24} />
                   </button>
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                    <h4 className="font-bold text-blue-900 mb-3 text-sm">Notifications</h4>
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                    <h4 className="font-bold text-blue-900 mb-3 text-sm flex items-center gap-2">
+                       <Bell size={16} className="text-yellow-500" /> Notifications
+                    </h4>
                     <div className="space-y-3">
-                      <div className="text-xs p-2 bg-blue-50 rounded-lg text-blue-800 border border-blue-100">
-                        <p className="font-bold">Nouvelle Promotion !</p>
-                        <p>Profitez de -10% sur la gamme Miele ce weekend.</p>
+                      <div className="text-xs p-3 bg-blue-50 rounded-xl text-blue-800 border border-blue-100 group/notif">
+                        <div className="flex items-start gap-2">
+                          <span className="mt-0.5">🔥</span>
+                          <div>
+                            <p className="font-bold">Promotion de Pâques !</p>
+                            <p className="opacity-80">Jusqu'à -15% sur tous les réfrigérateurs LG cette semaine.</p>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs p-2 bg-yellow-50 rounded-lg text-yellow-800 border border-yellow-100">
-                        <p className="font-bold">Rappel Paiement</p>
-                        <p>Votre prochaine mensualité est prévue pour le 1er du mois.</p>
+                      <div className="text-xs p-3 bg-red-50 rounded-xl text-red-800 border border-red-100">
+                        <div className="flex items-start gap-2">
+                          <span className="mt-0.5">⚠️</span>
+                          <div>
+                            <p className="font-bold">Retard de paiement</p>
+                            <p className="opacity-80">Votre mensualité du 15 Avril est en attente. Merci de régulariser.</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                <Link to="/cart" className="relative text-gray-600 hover:text-blue-900 p-2 rounded-full hover:bg-gray-50 transition-all">
-                  <ShoppingCart size={24} />
-                  {cartCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-yellow-500 text-blue-900 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {cartCount}
-                    </span>
-                  )}
-                </Link>
+
+                {!isAdmin && (
+                  <Link to="/cart" className="relative text-gray-600 hover:text-blue-900 p-2 rounded-full hover:bg-gray-50 transition-all">
+                    <ShoppingCart size={24} />
+                    {cartCount > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-yellow-500 text-blue-900 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {cartCount}
+                      </span>
+                    )}
+                  </Link>
+                )}
+
                 <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-                  <img src={profile?.photoURL} alt="" className="w-8 h-8 rounded-full border border-gray-200" />
-                  <button onClick={logout} className="text-gray-600 hover:text-red-600">
-                    <LogOut size={20} />
-                  </button>
+                  <Link to="/account" className="relative group">
+                    <img 
+                      src={profile?.photoURL} 
+                      alt="Account" 
+                      className="w-10 h-10 rounded-full border-2 border-transparent group-hover:border-blue-900 transition-all object-cover shadow-sm"
+                    />
+                  </Link>
+                  <div className="hidden lg:block text-right">
+                    <p className="text-xs font-bold text-blue-900 leading-tight">{profile?.displayName?.split(' ')[0]}</p>
+                    <button onClick={logout} className="text-[10px] uppercase font-black text-red-400 hover:text-red-600 tracking-tighter transition-colors">Déconnexion</button>
+                  </div>
                 </div>
               </>
             ) : (
-              <button onClick={login} className="bg-blue-900 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-800 transition-colors">
-                Connexion
+              <button 
+                onClick={login} 
+                disabled={isLoggingIn}
+                className="bg-blue-900 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoggingIn ? "Connexion..." : "Connexion"}
               </button>
             )}
           </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-4">
-            {user && (
+            {user && !isAdmin && (
               <Link to="/cart" className="relative text-gray-600">
                 <ShoppingCart size={24} />
                 {cartCount > 0 && (
@@ -137,30 +193,77 @@ const Navbar = () => {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden bg-white border-t border-gray-100 overflow-hidden"
           >
-            <div className="px-4 py-4 space-y-4 max-h-[80vh] overflow-y-auto">
+            <div className="px-4 py-4 space-y-6 max-h-[80vh] overflow-y-auto">
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase mb-2">Articles</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Link to="/?category=refrigerateurs" onClick={() => setIsOpen(false)} className="text-sm text-gray-600 py-1">Réfrigérateurs</Link>
-                  <Link to="/?category=fours" onClick={() => setIsOpen(false)} className="text-sm text-gray-600 py-1">Fours</Link>
-                  <Link to="/?category=lave-vaisselle" onClick={() => setIsOpen(false)} className="text-sm text-gray-600 py-1">Lave-vaisselle</Link>
-                  <Link to="/?category=salons" onClick={() => setIsOpen(false)} className="text-sm text-gray-600 py-1">Salons</Link>
-                  <Link to="/?category=chambres" onClick={() => setIsOpen(false)} className="text-sm text-gray-600 py-1">Chambres</Link>
-                  <Link to="/" onClick={() => setIsOpen(false)} className="text-sm font-bold text-blue-900 py-1">Tout voir</Link>
+                <Link to="/" onClick={() => setIsOpen(false)} className="text-sm font-bold text-blue-900 border-b border-gray-100 pb-2 mb-4 flex items-center justify-between group">
+                  EXPLORER TOUT LE CATALOGUE <ChevronRight size={16} />
+                </Link>
+                <div className="space-y-4">
+                  {CATEGORY_GROUPS.map((group) => {
+                    const isExpanded = expandedGroups.includes(group.id);
+                    return (
+                      <div key={group.id} className="border-b border-gray-50 pb-2">
+                        <button 
+                          onClick={() => toggleGroup(group.id)}
+                          className="flex items-center justify-between w-full py-2 hover:bg-gray-50 rounded-lg transition-colors px-2"
+                        >
+                          <h4 className="font-bold text-blue-900 text-xs uppercase tracking-widest text-left">{group.name}</h4>
+                          <ChevronDown size={16} className={cn("text-gray-400 transition-transform", isExpanded && "rotate-180")} />
+                        </button>
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="grid grid-cols-1 gap-1 pl-4 pt-2 pb-2">
+                                {group.categories.map((cat) => (
+                                  <Link 
+                                    key={cat.id} 
+                                    to={`/?category=${cat.id}`} 
+                                    onClick={() => setIsOpen(false)} 
+                                    className="text-sm text-gray-500 py-1.5 hover:text-blue-900 block"
+                                  >
+                                    {cat.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               {user ? (
                 <>
-                  <Link to={isAdmin ? "/admin" : "/dashboard"} onClick={() => setIsOpen(false)} className="block text-gray-600 font-medium">
-                    {isAdmin ? "Admin Panel" : "Mes Commandes"}
+                  <Link to="/account" onClick={() => setIsOpen(false)} className="flex items-center gap-3 p-3 bg-blue-50 rounded-2xl border border-blue-100">
+                    <img src={profile?.photoURL} alt="" className="w-12 h-12 rounded-full border-2 border-white shadow-sm" />
+                    <div>
+                      <p className="font-bold text-blue-900">{profile?.displayName}</p>
+                      <p className="text-xs text-blue-600 font-medium">Mon Compte</p>
+                    </div>
                   </Link>
-                  <button onClick={() => { logout(); setIsOpen(false); }} className="block w-full text-left text-red-600 font-medium">
-                    Déconnexion
-                  </button>
+                  <div className="grid grid-cols-1 gap-2">
+                    <Link to="/account" onClick={() => setIsOpen(false)} className="block text-gray-600 font-bold py-2 border-b border-gray-50">Mon Espace Client</Link>
+                    <Link to={isAdmin ? "/admin" : "/dashboard"} onClick={() => setIsOpen(false)} className="block text-gray-600 font-bold py-2 border-b border-gray-50">
+                      {isAdmin ? "Admin Panel" : "Commandes & Paiements"}
+                    </Link>
+                    <button onClick={() => { logout(); setIsOpen(false); }} className="block w-full text-left text-red-600 font-bold py-2 mt-4">
+                      Déconnexion
+                    </button>
+                  </div>
                 </>
               ) : (
-                <button onClick={() => { login(); setIsOpen(false); }} className="w-full bg-blue-900 text-white px-4 py-2 rounded-lg font-medium">
-                  Connexion
+                <button 
+                  onClick={() => { login(); setIsOpen(false); }} 
+                  disabled={isLoggingIn}
+                  className="w-full bg-blue-900 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50"
+                >
+                  {isLoggingIn ? "Connexion..." : "Connexion"}
                 </button>
               )}
             </div>
@@ -226,6 +329,7 @@ import ClientDashboard from './pages/ClientDashboard';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import ItemDetail from './pages/ItemDetail';
+import Account from './pages/Account';
 
 export default function App() {
   return (
@@ -241,6 +345,7 @@ export default function App() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/dashboard" element={<ClientDashboard />} />
+                <Route path="/account" element={<Account />} />
                 <Route path="/admin/*" element={<AdminDashboard />} />
               </Routes>
             </main>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
 import { collection, addDoc, Timestamp, doc, updateDoc, increment } from 'firebase/firestore';
@@ -16,15 +16,44 @@ const Checkout = () => {
   const [paymentType, setPaymentType] = useState<PaymentType>('cash');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [address, setAddress] = useState(profile?.address || '');
+  const [phone, setPhone] = useState(profile?.phone || '');
+
+  useEffect(() => {
+    if (profile?.address) setAddress(profile.address);
+    if (profile?.phone) setPhone(profile.phone);
+  }, [profile]);
+
   const navigate = useNavigate();
 
   const handlePlaceOrder = async () => {
     if (!user || cart.length === 0) return;
+    if (!address.trim() || !phone.trim()) {
+      toast.error("Veuillez renseigner votre adresse et votre numéro de téléphone.");
+      return;
+    }
     setIsProcessing(true);
 
     try {
+      // 1. Update user profile with new info if changed
+      if (address !== profile?.address || phone !== profile?.phone) {
+        try {
+          await updateDoc(doc(db, 'users', user.uid), {
+            address,
+            phone
+          });
+        } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+        }
+      }
+
+      // 2. Create the order
       const orderData = {
         clientId: user.uid,
+        clientName: profile?.displayName || 'Client',
+        clientEmail: profile?.email || '',
+        clientAddress: address,
+        clientPhone: phone,
         items: cart.map(item => ({
           itemId: item.id,
           name: item.name,
@@ -37,34 +66,50 @@ const Checkout = () => {
         createdAt: Timestamp.now()
       };
 
-      const orderRef = await addDoc(collection(db, 'orders'), orderData);
+      let orderRef;
+      try {
+        orderRef = await addDoc(collection(db, 'orders'), orderData);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.CREATE, 'orders');
+        return; // Stop if order creation fails
+      }
 
       // If installment, create a payment plan
-      if (paymentType === 'installment') {
+      if (paymentType === 'installment' && orderRef) {
         const planData = {
           orderId: orderRef.id,
           clientId: user.uid,
+          clientName: profile?.displayName || 'Client',
           totalAmount: total,
           remainingAmount: total,
           installmentsCount: 10, // Default 10 installments
           status: 'active'
         };
-        await addDoc(collection(db, 'paymentPlans'), planData);
+        try {
+          await addDoc(collection(db, 'paymentPlans'), planData);
+        } catch (error) {
+          handleFirestoreError(error, OperationType.CREATE, 'paymentPlans');
+        }
       }
 
       // Update stock (simplified)
       for (const item of cart) {
         const itemRef = doc(db, 'items', item.id);
-        await updateDoc(itemRef, {
-          stock: increment(-item.quantity)
-        });
+        try {
+          await updateDoc(itemRef, {
+            stock: increment(-item.quantity)
+          });
+        } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, `items/${item.id}`);
+        }
       }
 
       clearCart();
       setIsSuccess(true);
       toast.success("Commande passée avec succès !");
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'orders');
+      // General error fallback if not caught by specific blocks
+      console.error("Checkout error:", error);
       toast.error("Erreur lors de la commande");
     } finally {
       setIsProcessing(false);
@@ -129,6 +174,26 @@ const Checkout = () => {
                 <div className="p-3 bg-gray-50 rounded-xl text-blue-900 font-medium border border-gray-100">
                   {profile?.email}
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Numéro de téléphone</label>
+                <input 
+                  type="tel" 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Ex: +225 07 00 00 00 00"
+                  className="w-full p-3 bg-white rounded-xl text-blue-900 font-medium border border-gray-200 focus:ring-2 focus:ring-blue-900 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Adresse de livraison</label>
+                <input 
+                  type="text" 
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Ex: Cocody, Cité des Arts, Appt 12"
+                  className="w-full p-3 bg-white rounded-xl text-blue-900 font-medium border border-gray-200 focus:ring-2 focus:ring-blue-900 outline-none transition-all"
+                />
               </div>
             </div>
           </div>
@@ -226,7 +291,10 @@ const Checkout = () => {
               className="w-full bg-blue-900 text-white py-4 rounded-xl font-bold hover:bg-blue-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 disabled:bg-gray-300"
             >
               {isProcessing ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                  Traitement en cours...
+                </>
               ) : (
                 <>
                   Confirmer la commande

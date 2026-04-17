@@ -4,6 +4,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item } from '../types';
 import { useCart } from '../CartContext';
+import { useAuth } from '../AuthContext';
 import { ShoppingCart, ArrowLeft, Plus, Minus, CheckCircle, Package, ShieldCheck, Truck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
@@ -15,6 +16,7 @@ const ItemDetail = () => {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
+  const { isAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -112,40 +114,42 @@ const ItemDetail = () => {
           </div>
 
           {/* Add to Cart */}
-          <div className="mt-auto space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center border border-gray-200 rounded-xl p-1 bg-white">
+          {!isAdmin && (
+            <div className="mt-auto space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center border border-gray-200 rounded-xl p-1 bg-white">
+                  <button 
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <Minus size={20} />
+                  </button>
+                  <span className="w-12 text-center font-bold text-blue-900">{quantity}</span>
+                  <button 
+                    onClick={() => setQuantity(Math.min(item.stock, quantity + 1))}
+                    className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <Plus size={20} />
+                  </button>
+                </div>
                 <button 
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => {
+                    for(let i=0; i<quantity; i++) addToCart(item);
+                    toast.success(`${quantity} ${item.name} ajouté(s) au panier`);
+                  }}
+                  disabled={item.stock <= 0}
+                  className="flex-grow bg-blue-900 text-white py-4 rounded-xl font-bold hover:bg-blue-800 transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-900/20 disabled:bg-gray-300 disabled:shadow-none"
                 >
-                  <Minus size={20} />
-                </button>
-                <span className="w-12 text-center font-bold text-blue-900">{quantity}</span>
-                <button 
-                  onClick={() => setQuantity(Math.min(item.stock, quantity + 1))}
-                  className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  <Plus size={20} />
+                  <ShoppingCart size={24} />
+                  Ajouter au panier
                 </button>
               </div>
-              <button 
-                onClick={() => {
-                  for(let i=0; i<quantity; i++) addToCart(item);
-                  toast.success(`${quantity} ${item.name} ajouté(s) au panier`);
-                }}
-                disabled={item.stock <= 0}
-                className="flex-grow bg-blue-900 text-white py-4 rounded-xl font-bold hover:bg-blue-800 transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-900/20 disabled:bg-gray-300 disabled:shadow-none"
-              >
-                <ShoppingCart size={24} />
-                Ajouter au panier
-              </button>
+              <div className="flex items-center justify-center gap-2 text-gray-400 text-sm">
+                <CheckCircle size={16} className="text-green-500" />
+                Paiement sécurisé et échelonné disponible
+              </div>
             </div>
-            <div className="flex items-center justify-center gap-2 text-gray-400 text-sm">
-              <CheckCircle size={16} className="text-green-500" />
-              Paiement sécurisé et échelonné disponible
-            </div>
-          </div>
+          )}
         </motion.div>
       </div>
     </div>

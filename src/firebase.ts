@@ -60,6 +60,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 }
 
 async function testConnection() {
+  console.log('Current domain:', window.location.hostname);
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {

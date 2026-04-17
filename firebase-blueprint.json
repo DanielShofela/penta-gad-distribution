@@ -9,7 +9,9 @@
         "email": { "type": "string", "format": "email" },
         "role": { "type": "string", "enum": ["admin", "client"] },
         "displayName": { "type": "string" },
-        "photoURL": { "type": "string" }
+        "photoURL": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" }
       },
       "required": ["uid", "email", "role"]
     },
@@ -32,13 +34,17 @@
       "type": "object",
       "properties": {
         "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientEmail": { "type": "string", "format": "email" },
+        "clientAddress": { "type": "string" },
+        "clientPhone": { "type": "string" },
         "items": { "type": "array" },
         "totalAmount": { "type": "number" },
         "paymentType": { "type": "string", "enum": ["cash", "installment"] },
         "status": { "type": "string", "enum": ["pending", "confirmed", "shipped", "delivered"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["clientId", "items", "totalAmount", "paymentType", "status", "createdAt"]
+      "required": ["clientId", "clientName", "clientEmail", "clientAddress", "clientPhone", "items", "totalAmount", "paymentType", "status", "createdAt"]
     },
     "PaymentPlan": {
       "title": "PaymentPlan",
@@ -47,12 +53,13 @@
       "properties": {
         "orderId": { "type": "string" },
         "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
         "totalAmount": { "type": "number" },
         "remainingAmount": { "type": "number" },
         "installmentsCount": { "type": "integer" },
         "status": { "type": "string", "enum": ["active", "completed"] }
       },
-      "required": ["orderId", "clientId", "totalAmount", "remainingAmount", "installmentsCount", "status"]
+      "required": ["orderId", "clientId", "clientName", "totalAmount", "remainingAmount", "installmentsCount", "status"]
     },
     "Payment": {
       "title": "Payment",
