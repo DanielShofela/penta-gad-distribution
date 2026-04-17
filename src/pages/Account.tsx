@@ -4,7 +4,7 @@ import { User, Package, LogOut, ChevronRight, Settings, Info, Bell, CreditCard, 
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { compressImage } from '../lib/imageUtils';
 
@@ -53,7 +53,14 @@ const Account = () => {
     if (!profile) return;
     setIsSaving(true);
     try {
-      await updateDoc(doc(db, 'users', profile.uid), formData);
+      const updateData: any = { ...formData };
+      
+      // Track name history if name changed
+      if (formData.displayName.trim() !== profile.displayName) {
+        updateData.nameHistory = arrayUnion(profile.displayName);
+      }
+
+      await updateDoc(doc(db, 'users', profile.uid), updateData);
       toast.success("Profil mis à jour avec succès");
       setIsEditingProfile(false);
     } catch (error) {

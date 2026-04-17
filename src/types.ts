@@ -10,6 +10,7 @@ export interface UserProfile {
   photoURL: string;
   address?: string;
   phone?: string;
+  nameHistory?: string[];
 }
 
 export interface Item {
@@ -20,6 +21,8 @@ export interface Item {
   imageUrl: string;
   stock: number;
   category?: string;
+  allowInstallments?: boolean; // 4 months
+  allowTontine?: boolean; // 100 days
 }
 
 export interface OrderItem {

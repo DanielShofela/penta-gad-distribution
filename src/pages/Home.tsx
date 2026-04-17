@@ -198,6 +198,22 @@ const Home = () => {
               <Link to={`/item/${item.id}`}>
                 <h3 className="text-xl font-bold text-blue-900 mb-2 hover:text-blue-700 transition-colors">{item.name}</h3>
               </Link>
+              
+              <div className="flex flex-wrap gap-2 mb-4">
+                {item.allowInstallments && (
+                  <div className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold border border-blue-100 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                    Crédit: {formatCurrency(Math.round(item.price / 4))}/mois
+                  </div>
+                )}
+                {item.allowTontine && (
+                  <div className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded-md text-[10px] font-bold border border-yellow-100 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
+                    Tontine: {formatCurrency(Math.round(item.price * 0.01))}/jour
+                  </div>
+                )}
+              </div>
+
               <p className="text-gray-500 text-sm line-clamp-2 mb-4 h-10">
                 {item.description}
               </p>

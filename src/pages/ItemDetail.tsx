@@ -5,7 +5,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item } from '../types';
 import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
-import { ShoppingCart, ArrowLeft, Plus, Minus, CheckCircle, Package, ShieldCheck, Truck } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Plus, Minus, CheckCircle, Package, ShieldCheck, Truck, DollarSign } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { formatCurrency } from '../lib/utils';
@@ -96,7 +96,7 @@ const ItemDetail = () => {
           </div>
 
           {/* Features */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
             <div className="flex items-center gap-3 p-4 rounded-2xl bg-blue-50 border border-blue-100">
               <Truck className="text-blue-900" size={24} />
               <div>
@@ -112,6 +112,42 @@ const ItemDetail = () => {
               </div>
             </div>
           </div>
+
+          {/* Payment Options Details */}
+          {(item.allowInstallments || item.allowTontine) && (
+            <div className="bg-gray-50 rounded-3xl p-6 mb-12 border border-gray-100">
+              <h4 className="text-blue-900 font-bold mb-4 flex items-center gap-2">
+                <DollarSign size={20} className="text-yellow-500" />
+                Options de Financement disponibles
+              </h4>
+              <div className="space-y-4">
+                {item.allowInstallments && (
+                  <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-blue-100">
+                    <div>
+                      <p className="text-sm font-bold text-blue-900">Paiement Échelonné (4 mois)</p>
+                      <p className="text-xs text-gray-500">Paiement à votre rythme sur une durée de 4 mois.</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black text-blue-900">{formatCurrency(Math.round(item.price / 4))}</p>
+                      <p className="text-[10px] text-blue-600 uppercase font-bold">/ mois idéal</p>
+                    </div>
+                  </div>
+                )}
+                {item.allowTontine && (
+                  <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-yellow-100">
+                    <div>
+                      <p className="text-sm font-bold text-blue-900">Tontine Quotidienne (100 jours)</p>
+                      <p className="text-xs text-gray-500">Tirage au sort tous les 10 jours. Recevez votre article avant 100 jours !</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black text-yellow-600">{formatCurrency(Math.round(item.price * 0.01))}</p>
+                      <p className="text-[10px] text-yellow-600 uppercase font-bold">/ jour (1%)</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Add to Cart */}
           {!isAdmin && (

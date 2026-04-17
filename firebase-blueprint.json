@@ -11,7 +11,8 @@
         "displayName": { "type": "string" },
         "photoURL": { "type": "string" },
         "address": { "type": "string" },
-        "phone": { "type": "string" }
+        "phone": { "type": "string" },
+        "nameHistory": { "type": "array", "items": { "type": "string" } }
       },
       "required": ["uid", "email", "role"]
     },
@@ -24,7 +25,9 @@
         "description": { "type": "string" },
         "price": { "type": "number" },
         "imageUrl": { "type": "string" },
-        "stock": { "type": "integer" }
+        "stock": { "type": "integer" },
+        "allowInstallments": { "type": "boolean" },
+        "allowTontine": { "type": "boolean" }
       },
       "required": ["name", "price", "stock"]
     },

@@ -5,7 +5,7 @@ import { collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, doc, order
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item, Order, PaymentPlan, UserProfile, Payment } from '../types';
 import { CATEGORY_GROUPS } from '../constants';
-import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Plus, Trash2, Edit2, CheckCircle, Clock, AlertCircle, ChevronRight, Search, TrendingUp, DollarSign, PackageCheck, Settings as SettingsIcon } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Plus, Trash2, Edit2, CheckCircle, Clock, AlertCircle, ChevronRight, Search, TrendingUp, DollarSign, PackageCheck, Settings as SettingsIcon, Eye, Mail, Phone, MapPin, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -178,6 +178,7 @@ const AdminItems = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [formPrice, setFormPrice] = useState<number>(0);
   const [itemImagePreview, setItemImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -190,8 +191,10 @@ const AdminItems = () => {
   useEffect(() => {
     if (editingItem) {
       setItemImagePreview(editingItem.imageUrl);
+      setFormPrice(editingItem.price);
     } else {
       setItemImagePreview(null);
+      setFormPrice(0);
     }
   }, [editingItem, isAdding]);
 
@@ -220,6 +223,8 @@ const AdminItems = () => {
       price: Number(formData.get('price')),
       stock: Number(formData.get('stock')),
       category: formData.get('category') as string,
+      allowInstallments: formData.get('allowInstallments') === 'on',
+      allowTontine: formData.get('allowTontine') === 'on',
       imageUrl: itemImagePreview || `https://picsum.photos/seed/${Math.random()}/800/600`
     };
 
@@ -287,11 +292,66 @@ const AdminItems = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-400 mb-1">Prix (FCFA)</label>
-                    <input name="price" type="number" defaultValue={editingItem?.price} required className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" />
+                    <input 
+                      name="price" 
+                      type="number" 
+                      defaultValue={editingItem?.price} 
+                      onChange={(e) => setFormPrice(Number(e.target.value))}
+                      required 
+                      className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" 
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-400 mb-1">Stock</label>
                     <input name="stock" type="number" defaultValue={editingItem?.stock} required className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" />
+                  </div>
+                </div>
+                
+                {formPrice > 0 && (
+                  <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col sm:flex-row justify-between gap-4">
+                    <div>
+                      <p className="text-[10px] font-black text-blue-900 uppercase tracking-widest mb-2">Calculateur de Financement</p>
+                      <div className="flex gap-4">
+                        <div className="text-sm">
+                          <p className="font-bold text-blue-900 leading-none">{formatCurrency(Math.round(formPrice / 4))}</p>
+                          <p className="text-[10px] text-gray-400">Mensuel (4 mois)</p>
+                        </div>
+                        <div className="text-sm border-l border-blue-100 pl-4">
+                          <p className="font-bold text-yellow-600 leading-none">{formatCurrency(Math.round(formPrice * 0.01))}</p>
+                          <p className="text-[10px] text-gray-400">Quotidien (Tontine)</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right flex flex-col justify-center">
+                      <p className="text-xs font-bold text-blue-900">Total: {formatCurrency(formPrice)}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <input 
+                      type="checkbox" 
+                      name="allowInstallments" 
+                      defaultChecked={editingItem?.allowInstallments}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-900 focus:ring-blue-900" 
+                    />
+                    <div>
+                      <p className="text-sm font-bold text-blue-900">Crédit 4 mois</p>
+                      <p className="text-[10px] text-gray-500">Paiement libre sur 4 mois</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <input 
+                      type="checkbox" 
+                      name="allowTontine" 
+                      defaultChecked={editingItem?.allowTontine}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-900 focus:ring-blue-900" 
+                    />
+                    <div>
+                      <p className="text-sm font-bold text-blue-900">Tontine 100j</p>
+                      <p className="text-[10px] text-gray-500">1% / jour (livraison par tirage)</p>
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -528,6 +588,7 @@ const AdminPayments = () => {
 
 const AdminUsers = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, 'users'), orderBy('role'));
@@ -539,13 +600,14 @@ const AdminUsers = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-blue-900">Utilisateurs</h2>
-      <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
+      <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm overflow-x-auto">
         <table className="w-full text-left">
           <thead className="bg-gray-50 text-gray-400 text-xs uppercase tracking-widest">
             <tr>
               <th className="px-6 py-4">Utilisateur</th>
               <th className="px-6 py-4">Email</th>
               <th className="px-6 py-4">Rôle</th>
+              <th className="px-6 py-4">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -553,7 +615,7 @@ const AdminUsers = () => {
               <tr key={user.uid} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full" />
+                    <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full border border-gray-100 object-cover" />
                     <span className="font-bold text-blue-900">{user.displayName}</span>
                   </div>
                 </td>
@@ -566,11 +628,137 @@ const AdminUsers = () => {
                     {user.role}
                   </span>
                 </td>
+                <td className="px-6 py-4">
+                  <button 
+                    onClick={() => setSelectedUser(user)}
+                    className="p-2 text-blue-900 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2 text-xs font-bold"
+                  >
+                    <Eye size={16} />
+                    Détails
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      <AnimatePresence>
+        {selectedUser && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedUser(null)}
+              className="absolute inset-0 bg-blue-900/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+            >
+              <div className="bg-blue-900 p-8 text-white">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-6">
+                    <img 
+                      src={selectedUser.photoURL} 
+                      alt="" 
+                      className="w-20 h-20 rounded-2xl border-2 border-white/20 shadow-lg object-cover" 
+                    />
+                    <div>
+                      <h3 className="text-2xl font-bold">{selectedUser.displayName}</h3>
+                      <p className="text-blue-200">{selectedUser.email}</p>
+                      <span className="mt-2 inline-block px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                        Rôle: {selectedUser.role}
+                      </span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedUser(null)}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-8 space-y-8 max-h-[60vh] overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2">Informations de Contact</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-900">
+                          <Mail size={16} />
+                        </div>
+                        <span className="text-gray-600">{selectedUser.email}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-700">
+                          <Phone size={16} />
+                        </div>
+                        <span className="text-gray-600">{selectedUser.phone || 'Non renseigné'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2">Adresse de Livraison</h4>
+                    <div className="flex items-start gap-3 text-sm">
+                      <div className="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-700 mt-1">
+                        <MapPin size={16} />
+                      </div>
+                      <p className="text-gray-600 leading-relaxed">
+                        {selectedUser.address || 'Aucune adresse enregistrée.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedUser.nameHistory && selectedUser.nameHistory.length > 0 && (
+                  <div className="space-y-4 pt-4">
+                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2 flex items-center gap-2">
+                       <Clock size={14} className="text-blue-900" /> Historique des Noms
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedUser.nameHistory.map((oldName, i) => (
+                        <span key={i} className="text-xs bg-gray-50 text-gray-400 px-3 py-1 rounded-full border border-gray-100 italic">
+                          {oldName}
+                        </span>
+                      ))}
+                      <span className="text-xs bg-blue-50 text-blue-900 px-3 py-1 rounded-full border border-blue-100 font-bold">
+                        {selectedUser.displayName} (Actuel)
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-gray-400 italic mt-2">
+                      * Les anciens noms sont conservés pour prévenir toute tentative de fraude ou d'usurpation d'identité.
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-4 pt-4">
+                  <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2 text-center">Historique Commandes & Paiements</h4>
+                  <div className="bg-gray-50 rounded-2xl p-6 text-center italic text-gray-400 text-sm">
+                    Accédez au menu principal de gestion des commandes ou des paiements pour filtrer par ce client via son nom ou ID 
+                    <span className="block mt-1 font-mono text-[10px] opacity-60">ID: {selectedUser.uid}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 bg-gray-50 flex justify-end px-8">
+                <button 
+                  onClick={() => setSelectedUser(null)}
+                  className="px-8 py-3 bg-blue-900 text-white rounded-xl font-bold hover:bg-blue-800 transition-all shadow-lg shadow-blue-900/20"
+                >
+                  Fermer
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
