@@ -188,90 +188,121 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Nav */}
+      {/* Mobile Nav Drawer */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-t border-gray-100 overflow-hidden"
-          >
-            <div className="px-4 py-4 space-y-6 max-h-[80vh] overflow-y-auto">
-              <div>
-                <Link to="/" onClick={() => setIsOpen(false)} className="text-sm font-bold text-blue-900 border-b border-gray-100 pb-2 mb-4 flex items-center justify-between group">
-                  EXPLORER TOUT LE CATALOGUE <ChevronRight size={16} />
-                </Link>
-                <div className="space-y-4">
-                  {CATEGORY_GROUPS.map((group) => {
-                    const isExpanded = expandedGroups.includes(group.id);
-                    return (
-                      <div key={group.id} className="border-b border-gray-50 pb-2">
-                        <button 
-                          onClick={() => toggleGroup(group.id)}
-                          className="flex items-center justify-between w-full py-2 hover:bg-gray-50 rounded-lg transition-colors px-2"
-                        >
-                          <h4 className="font-bold text-blue-900 text-xs uppercase tracking-widest text-left">{group.name}</h4>
-                          <ChevronDown size={16} className={cn("text-gray-400 transition-transform", isExpanded && "rotate-180")} />
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="md:hidden fixed inset-0 bg-blue-900/20 backdrop-blur-[2px] z-[60]"
+            />
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="md:hidden fixed inset-y-0 left-0 w-[85%] max-w-[320px] bg-white shadow-2xl z-[70] flex flex-col"
+            >
+              <div className="p-5 border-b border-gray-50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {settings?.logoUrl ? (
+                    <img src={settings.logoUrl} alt="Logo" className="h-8 w-auto object-contain" referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="w-8 h-8 bg-blue-900 rounded-lg flex items-center justify-center text-yellow-500 font-bold text-lg">P</div>
+                  )}
+                  <span className="text-base font-bold text-blue-900">{settings?.siteName || "PENTA GAD"}</span>
+                </div>
+                <button onClick={() => setIsOpen(false)} className="text-gray-400 p-1">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-4 py-6 space-y-8">
+                <div>
+                  <Link to="/" onClick={() => setIsOpen(false)} className="text-xs font-black text-blue-900 border-b border-gray-100 pb-2 mb-4 flex items-center justify-between group uppercase tracking-widest">
+                    Tout le catalogue <ChevronRight size={14} />
+                  </Link>
+                  <div className="space-y-4">
+                    {CATEGORY_GROUPS.map((group) => {
+                      const isExpanded = expandedGroups.includes(group.id);
+                      return (
+                        <div key={group.id} className="border-b border-gray-50 pb-2">
+                          <button 
+                            onClick={() => toggleGroup(group.id)}
+                            className="flex items-center justify-between w-full py-2 hover:bg-gray-50 rounded-lg transition-colors px-2"
+                          >
+                            <h4 className="font-bold text-blue-900 text-[10px] uppercase tracking-widest text-left">{group.name}</h4>
+                            <ChevronDown size={14} className={cn("text-gray-400 transition-transform", isExpanded && "rotate-180")} />
+                          </button>
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="grid grid-cols-1 gap-1 pl-4 pt-2 pb-2">
+                                  {group.categories.map((cat) => (
+                                    <Link 
+                                      key={cat.id} 
+                                      to={`/?category=${cat.id}`} 
+                                      onClick={() => setIsOpen(false)} 
+                                      className="text-sm text-gray-500 py-1.5 hover:text-blue-900 block"
+                                    >
+                                      {cat.name}
+                                    </Link>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t border-gray-100">
+                  {user ? (
+                    <div className="space-y-6">
+                      <Link to="/account" onClick={() => setIsOpen(false)} className="flex items-center gap-3 p-3 bg-blue-50 rounded-2xl border border-blue-100">
+                        <img src={profile?.photoURL} alt="" className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" />
+                        <div>
+                          <p className="font-bold text-blue-900 text-sm">{profile?.displayName}</p>
+                          <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Mon Compte</p>
+                        </div>
+                      </Link>
+                      <div className="grid grid-cols-1 gap-1">
+                        <Link to="/account" onClick={() => setIsOpen(false)} className="flex items-center gap-2 text-gray-600 font-bold py-2 px-2 hover:bg-gray-50 rounded-lg transition-colors text-sm">
+                          <User size={16} /> Mon Espace Client
+                        </Link>
+                        <Link to={isAdmin ? "/admin" : "/dashboard"} onClick={() => setIsOpen(false)} className="flex items-center gap-2 text-gray-600 font-bold py-2 px-2 hover:bg-gray-50 rounded-lg transition-colors text-sm">
+                          <Package size={16} /> {isAdmin ? "Admin Panel" : "Commandes & Paiements"}
+                        </Link>
+                        <button onClick={() => { logout(); setIsOpen(false); }} className="flex items-center gap-2 w-full text-left text-red-600 font-bold py-3 mt-4 border-t border-gray-50 px-2 transition-colors">
+                          <LogOut size={16} /> Déconnexion
                         </button>
-                        <AnimatePresence>
-                          {isExpanded && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="overflow-hidden"
-                            >
-                              <div className="grid grid-cols-1 gap-1 pl-4 pt-2 pb-2">
-                                {group.categories.map((cat) => (
-                                  <Link 
-                                    key={cat.id} 
-                                    to={`/?category=${cat.id}`} 
-                                    onClick={() => setIsOpen(false)} 
-                                    className="text-sm text-gray-500 py-1.5 hover:text-blue-900 block"
-                                  >
-                                    {cat.name}
-                                  </Link>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => { login(); setIsOpen(false); }} 
+                      disabled={isLoggingIn}
+                      className="w-full bg-blue-900 text-white px-4 py-3 rounded-xl font-bold disabled:opacity-50 shadow-lg shadow-blue-900/20 active:scale-95 transition-all text-sm"
+                    >
+                      {isLoggingIn ? "Connexion..." : "Connexion"}
+                    </button>
+                  )}
                 </div>
               </div>
-              {user ? (
-                <>
-                  <Link to="/account" onClick={() => setIsOpen(false)} className="flex items-center gap-3 p-3 bg-blue-50 rounded-2xl border border-blue-100">
-                    <img src={profile?.photoURL} alt="" className="w-12 h-12 rounded-full border-2 border-white shadow-sm" />
-                    <div>
-                      <p className="font-bold text-blue-900">{profile?.displayName}</p>
-                      <p className="text-xs text-blue-600 font-medium">Mon Compte</p>
-                    </div>
-                  </Link>
-                  <div className="grid grid-cols-1 gap-2">
-                    <Link to="/account" onClick={() => setIsOpen(false)} className="block text-gray-600 font-bold py-2 border-b border-gray-50">Mon Espace Client</Link>
-                    <Link to={isAdmin ? "/admin" : "/dashboard"} onClick={() => setIsOpen(false)} className="block text-gray-600 font-bold py-2 border-b border-gray-50">
-                      {isAdmin ? "Admin Panel" : "Commandes & Paiements"}
-                    </Link>
-                    <button onClick={() => { logout(); setIsOpen(false); }} className="block w-full text-left text-red-600 font-bold py-2 mt-4">
-                      Déconnexion
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <button 
-                  onClick={() => { login(); setIsOpen(false); }} 
-                  disabled={isLoggingIn}
-                  className="w-full bg-blue-900 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50"
-                >
-                  {isLoggingIn ? "Connexion..." : "Connexion"}
-                </button>
-              )}
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </nav>
