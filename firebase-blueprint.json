@@ -26,6 +26,11 @@
         "price": { "type": "number" },
         "imageUrl": { "type": "string" },
         "stock": { "type": "integer" },
+        "category": { "type": "string" },
+        "brand": { "type": "string" },
+        "reference": { "type": "string" },
+        "specifications": { "type": "string" },
+        "configurations": { "type": "string" },
         "allowInstallments": { "type": "boolean" },
         "allowTontine": { "type": "boolean" }
       },

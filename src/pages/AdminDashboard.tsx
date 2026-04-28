@@ -223,6 +223,10 @@ const AdminItems = () => {
       price: Number(formData.get('price')),
       stock: Number(formData.get('stock')),
       category: formData.get('category') as string,
+      brand: formData.get('brand') as string,
+      reference: formData.get('reference') as string,
+      specifications: formData.get('specifications') as string,
+      configurations: formData.get('configurations') as string,
       allowInstallments: formData.get('allowInstallments') === 'on',
       allowTontine: formData.get('allowTontine') === 'on',
       imageUrl: itemImagePreview || `https://picsum.photos/seed/${Math.random()}/800/600`
@@ -284,11 +288,32 @@ const AdminItems = () => {
                   <input name="name" defaultValue={editingItem?.name} required className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-400 mb-1">Description</label>
+                  <label className="block text-sm font-bold text-gray-400 mb-1">Description Courte</label>
                   <textarea name="description" defaultValue={editingItem?.description} required rows={3} className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-400 mb-1">Spécifications Techniques</label>
+                    <textarea name="specifications" defaultValue={editingItem?.specifications} rows={4} className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" placeholder="Un point par ligne..."></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-400 mb-1">Configurations / Options</label>
+                    <textarea name="configurations" defaultValue={editingItem?.configurations} rows={4} className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" placeholder="Versions, couleurs..."></textarea>
+                  </div>
                 </div>
               </div>
               <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-400 mb-1">Marque</label>
+                    <input name="brand" type="text" defaultValue={editingItem?.brand} className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" placeholder="ex: SMART TECHNOLOGY" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-400 mb-1">Référence / Modèle</label>
+                    <input name="reference" type="text" defaultValue={editingItem?.reference} className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" placeholder="ex: Str-188m" />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-400 mb-1">Prix (FCFA)</label>

@@ -4,7 +4,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item } from '../types';
 import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
-import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package } from 'lucide-react';
+import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -119,7 +119,7 @@ const Home = () => {
     );
   }
 
-  const ItemCard = ({ item, index }: { item: Item, index: number }) => (
+  const ItemCard = ({ item, index }: { item: Item, index: number, key?: string }) => (
     <motion.div 
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -272,16 +272,38 @@ const Home = () => {
               </div>
 
               {/* Horizontal Scrolling Wrapper */}
-              <div className="relative group/scroll">
-                <div className="flex overflow-x-auto gap-6 pb-6 pt-2 scrollbar-hide snap-x snap-mandatory">
+              <div className="relative group/scroll-container">
+                <div 
+                  id={`scroll-${group.id}`}
+                  className="flex overflow-x-auto gap-6 pb-6 pt-2 scrollbar-hide snap-x snap-mandatory scroll-smooth"
+                >
                   {group.items.map((item, idx) => (
                     <div key={item.id} className="snap-start">
                       <ItemCard item={item} index={idx} />
                     </div>
                   ))}
-                  {/* Empty space at end to allow scrolling past last card */}
                   <div className="flex-shrink-0 w-4" />
                 </div>
+                
+                {/* Scroll Buttons */}
+                <button 
+                  onClick={() => {
+                    const el = document.getElementById(`scroll-${group.id}`);
+                    if (el) el.scrollBy({ left: -350, behavior: 'smooth' });
+                  }}
+                  className="hidden md:flex absolute left-0 top-1/2 -translate-y-full -translate-x-4 w-10 h-10 rounded-full bg-white shadow-lg border border-gray-100 items-center justify-center text-blue-900 opacity-0 group-hover/scroll-container:opacity-100 transition-opacity z-10 hover:bg-gray-50"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+                <button 
+                  onClick={() => {
+                    const el = document.getElementById(`scroll-${group.id}`);
+                    if (el) el.scrollBy({ left: 350, behavior: 'smooth' });
+                  }}
+                  className="hidden md:flex absolute right-0 top-1/2 -translate-y-full translate-x-4 w-10 h-10 rounded-full bg-white shadow-lg border border-gray-100 items-center justify-center text-blue-900 opacity-0 group-hover/scroll-container:opacity-100 transition-opacity z-10 hover:bg-gray-50"
+                >
+                  <ChevronRight size={18} />
+                </button>
               </div>
             </div>
           ))}

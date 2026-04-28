@@ -21,6 +21,10 @@ export interface Item {
   imageUrl: string;
   stock: number;
   category?: string;
+  brand?: string;
+  reference?: string;
+  specifications?: string;
+  configurations?: string;
   allowInstallments?: boolean; // 4 months
   allowTontine?: boolean; // 100 days
 }
