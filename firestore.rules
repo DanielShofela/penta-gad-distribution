@@ -1,29 +1,64 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // ===============================================================
+    // Global Safety Net
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
 
     // ===============================================================
     // Helper Functions
     // ===============================================================
-    function isAuthenticated() {
+    function isSignedIn() {
       return request.auth != null;
     }
 
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
     function isAdmin() {
-      return isAuthenticated() &&
-        (request.auth.token.email == "digitalsoutien@gmail.com" || 
-         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+      return isSignedIn() && (
+        request.auth.token.email == "digitalsoutien@gmail.com" || 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
     }
 
     // ===============================================================
-    // Rules
+    // Validation Blueprints
+    // ===============================================================
+    function isValidReview(data) {
+      return data.keys().hasAll(['itemId', 'userName', 'rating', 'comment', 'createdAt']) &&
+             data.itemId is string && data.itemId.size() <= 128 &&
+             data.userName is string && data.userName.size() <= 100 &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() <= 2000 &&
+             (data.createdAt == request.time || data.createdAt is timestamp);
+    }
+
+    // ===============================================================
+    // Collection Rules
     // ===============================================================
 
     match /users/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
 
@@ -33,32 +68,40 @@ service cloud.firestore {
     }
 
     match /items/{itemId} {
-      allow read: if true;
+      allow get: if isValidId(itemId);
+      allow list: if true;
       allow create, delete: if isAdmin();
-      allow update: if isAdmin() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']));
+      allow update: if isAdmin() || (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['stock']));
 
       match /reviews/{reviewId} {
         allow read: if true;
-        allow create: if true; // Guest reviews allowed as per UI
-        allow delete, update: if isAdmin();
+        allow create: if isValidId(itemId) && isValidReview(incoming()) && incoming().itemId == itemId;
+        allow delete: if isAdmin();
+        allow update: if false; 
       }
     }
 
     match /orders/{orderId} {
-      allow read: if isAuthenticated() && (isAdmin() || (resource != null && resource.data.clientId == request.auth.uid));
-      allow create: if isAuthenticated();
-      allow update: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.clientId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) && request.resource.data.status == 'cancelled' && resource.data.status in ['pending', 'confirmed']);
-      allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.clientId && resource.data.status == 'cancelled');
+      allow read: if isSignedIn() && (isAdmin() || (resource != null && resource.data.clientId == request.auth.uid));
+      allow create: if isSignedIn();
+      allow update: if isAdmin() || (
+        isSignedIn() && 
+        request.auth.uid == resource.data.clientId && 
+        incoming().diff(existing()).affectedKeys().hasOnly(['status']) && 
+        incoming().status == 'cancelled' && 
+        resource.data.status in ['pending', 'confirmed']
+      );
+      allow delete: if isAdmin();
     }
 
     match /paymentPlans/{planId} {
-      allow read: if isAuthenticated() && (isAdmin() || (resource != null && resource.data.clientId == request.auth.uid));
-      allow create: if isAuthenticated(); // Simplified to unblock users
+      allow read: if isSignedIn() && (isAdmin() || (resource != null && resource.data.clientId == request.auth.uid));
+      allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
     match /payments/{paymentId} {
-      allow read: if isAuthenticated();
+      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
   }

@@ -460,25 +460,25 @@ const ItemDetail = () => {
           </div>
 
           {/* Features */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-blue-50 border border-blue-100">
-              <Truck className="text-blue-900" size={24} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 border border-blue-100">
+              <Truck className="text-blue-900" size={18} />
               <div>
-                <h4 className="font-bold text-blue-900 text-sm">
+                <h4 className="font-bold text-blue-900 text-xs">
                   {item.deliveryPrice === 0 ? "Livraison Gratuite" : "Livraison Standard"}
                 </h4>
-                <p className="text-blue-700 text-xs">
+                <p className="text-blue-700 text-[10px]">
                   {item.deliveryPrice === 0 ? "Installation incluse" : `Frais: ${formatCurrency(item.deliveryPrice || 0)}`}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-yellow-50 border border-yellow-100">
-              <ShieldCheck className="text-yellow-600" size={24} />
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-yellow-50 border border-yellow-100">
+              <ShieldCheck className="text-yellow-600" size={18} />
               <div>
-                <h4 className="font-bold text-yellow-700 text-sm">
+                <h4 className="font-bold text-yellow-700 text-xs">
                   {item.warranty ? `Garantie ${item.warranty}` : "Garantie Constructeur"}
                 </h4>
-                <p className="text-yellow-600 text-xs">Service après-vente VIP</p>
+                <p className="text-yellow-600 text-[10px]">Service après-vente VIP</p>
               </div>
             </div>
           </div>
