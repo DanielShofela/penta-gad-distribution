@@ -39,7 +39,10 @@
         "description": { "type": "string" },
         "fullDescription": { "type": "string" },
         "price": { "type": "number" },
-        "imageUrl": { "type": "string" },
+        "imageUrls": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
         "stock": { "type": "integer" },
         "category": { "type": "string" },
         "brand": { "type": "string" },

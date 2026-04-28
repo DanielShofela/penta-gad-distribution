@@ -29,7 +29,8 @@ export interface Item {
   description: string;
   fullDescription?: string;
   price: number;
-  imageUrl: string;
+  imageUrl?: string;
+  imageUrls?: string[];
   stock: number;
   category?: string;
   brand?: string;

@@ -55,7 +55,7 @@ const Cart = () => {
               >
                 <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0">
                   <img 
-                    src={item.imageUrl} 
+                    src={item.imageUrls?.[0] || item.imageUrl || `https://picsum.photos/seed/${item.id}/800/600`} 
                     alt={item.name} 
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"

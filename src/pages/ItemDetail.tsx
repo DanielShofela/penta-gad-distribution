@@ -23,6 +23,7 @@ const ItemDetail = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [newReview, setNewReview] = useState({ rating: 5, comment: '', userName: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   
   const { addToCart } = useCart();
   const { user, isAdmin } = useAuth();
@@ -200,23 +201,44 @@ const ItemDetail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
         {/* Image Section */}
         <div className="space-y-6">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative rounded-[2rem] overflow-hidden shadow-2xl bg-white aspect-square border border-gray-50"
-          >
-            <img 
-              src={item.imageUrl} 
-              alt={item.name} 
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-            {item.allowTontine && (
-              <div className="absolute top-6 left-6 bg-yellow-500 text-blue-900 px-4 py-1.5 rounded-full font-black text-xs uppercase tracking-widest shadow-xl">
-                Tontine Disponible
+          <div className="space-y-4">
+            <motion.div 
+              key={activeImageIndex}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative rounded-[2rem] overflow-hidden shadow-2xl bg-white aspect-square border border-gray-50"
+            >
+              <img 
+                src={(item.imageUrls && item.imageUrls[activeImageIndex]) || item.imageUrl || `https://picsum.photos/seed/${item.id}/800/600`} 
+                alt={item.name} 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+              {item.allowTontine && (
+                <div className="absolute top-6 left-6 bg-yellow-500 text-blue-900 px-4 py-1.5 rounded-full font-black text-xs uppercase tracking-widest shadow-xl">
+                  Tontine Disponible
+                </div>
+              )}
+            </motion.div>
+
+            {/* Thumbnails */}
+            {item.imageUrls && item.imageUrls.length > 1 && (
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                {item.imageUrls.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImageIndex(idx)}
+                    className={cn(
+                      "w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0",
+                      activeImageIndex === idx ? "border-blue-900 scale-105 shadow-md" : "border-gray-100 opacity-60 hover:opacity-100"
+                    )}
+                  >
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
               </div>
             )}
-          </motion.div>
+          </div>
           
           {/* Tabs for Desktop */}
           <div className="hidden lg:block bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm">

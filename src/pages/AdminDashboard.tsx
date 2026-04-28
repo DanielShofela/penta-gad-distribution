@@ -179,7 +179,7 @@ const AdminItems = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [formPrice, setFormPrice] = useState<number>(0);
-  const [itemImagePreview, setItemImagePreview] = useState<string | null>(null);
+  const [itemImagePreviews, setItemImagePreviews] = useState<string[]>([]);
 
   useEffect(() => {
     const q = query(collection(db, 'items'), orderBy('name'));
@@ -190,28 +190,42 @@ const AdminItems = () => {
 
   useEffect(() => {
     if (editingItem) {
-      setItemImagePreview(editingItem.imageUrl);
+      setItemImagePreviews(editingItem.imageUrls || [editingItem.imageUrl].filter(Boolean));
       setFormPrice(editingItem.price);
     } else {
-      setItemImagePreview(null);
+      setItemImagePreviews([]);
       setFormPrice(0);
     }
   }, [editingItem, isAdding]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit check
-        toast.error("L'image est trop volumineuse (max 5Mo)");
+    const files = e.target.files;
+    if (files) {
+      const remainingSlots = 4 - itemImagePreviews.length;
+      const filesToProcess = Array.from(files).slice(0, remainingSlots) as File[];
+
+      if (files.length > remainingSlots && remainingSlots === 0) {
+        toast.error("Maximum 4 images atteint");
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const compressed = await compressImage(reader.result as string);
-        setItemImagePreview(compressed);
-      };
-      reader.readAsDataURL(file);
+
+      for (const file of filesToProcess) {
+        if (file.size > 5 * 1024 * 1024) { 
+          toast.error(`"${file.name}" est trop volumineuse (max 5Mo)`);
+          continue;
+        }
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const compressed = await compressImage(reader.result as string);
+          setItemImagePreviews(prev => [...prev, compressed].slice(0, 4));
+        };
+        reader.readAsDataURL(file);
+      }
     }
+  };
+
+  const removeImage = (index: number) => {
+    setItemImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -232,7 +246,7 @@ const AdminItems = () => {
       warranty: formData.get('warranty') as string,
       allowInstallments: formData.get('allowInstallments') === 'on',
       allowTontine: formData.get('allowTontine') === 'on',
-      imageUrl: itemImagePreview || `https://picsum.photos/seed/${Math.random()}/800/600`
+      imageUrls: itemImagePreviews.length > 0 ? itemImagePreviews : [`https://picsum.photos/seed/${Math.random()}/800/600`]
     };
 
     try {
@@ -245,7 +259,7 @@ const AdminItems = () => {
       }
       setIsAdding(false);
       setEditingItem(null);
-      setItemImagePreview(null);
+      setItemImagePreviews([]);
     } catch (error) {
       toast.error("Erreur lors de l'enregistrement");
     }
@@ -429,26 +443,40 @@ const AdminItems = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-400 mb-1">Image de l'article</label>
+                  <label className="block text-sm font-bold text-gray-400 mb-1">Images de l'article (2 à 4 images)</label>
                   <div className="space-y-4">
                     <input 
                       type="file"
                       accept="image/*"
+                      multiple
                       onChange={handleFileChange}
-                      className="w-full p-2 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      disabled={itemImagePreviews.length >= 4}
+                      className="w-full p-2 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
                     />
-                    {itemImagePreview && (
-                      <div className="relative group inline-block">
-                        <img src={itemImagePreview} alt="Preview" className="h-24 w-24 object-cover rounded-xl border border-gray-100 p-1" />
-                        <button 
-                          type="button"
-                          onClick={() => setItemImagePreview(null)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-3">
+                      {itemImagePreviews.map((img, idx) => (
+                        <div key={idx} className="relative group inline-block">
+                          <img src={img} alt={`Preview ${idx + 1}`} className={cn(
+                            "h-24 w-24 object-cover rounded-xl border border-gray-100 p-1",
+                            idx === 0 && "ring-2 ring-blue-900 ring-offset-2"
+                          )} />
+                          {idx === 0 && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-blue-900 text-white text-[8px] px-2 py-0.5 rounded-full font-bold uppercase">Principale</span>}
+                          <button 
+                            type="button"
+                            onClick={() => removeImage(idx)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                      {itemImagePreviews.length === 0 && (
+                        <div className="h-24 w-full flex items-center justify-center border-2 border-dashed border-gray-100 rounded-2xl text-gray-400 text-xs italic">
+                          Veuillez ajouter au moins 2 images pour un meilleur rendu (Max 4).
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-gray-400">Glissez-déposez pour réorganiser prochainement. La première image est l'image principale.</p>
                   </div>
                 </div>
                 <div className="flex gap-4 pt-4">
@@ -464,7 +492,7 @@ const AdminItems = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {items.map(item => (
           <div key={item.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex gap-4 items-center">
-            <img src={item.imageUrl} alt="" className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />
+            <img src={item.imageUrls?.[0] || item.imageUrl} alt="" className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />
             <div className="flex-grow min-w-0">
               <h4 className="font-bold text-blue-900 truncate">{item.name}</h4>
               <p className="text-sm text-gray-400">{formatCurrency(item.price)} • Stock: {item.stock}</p>

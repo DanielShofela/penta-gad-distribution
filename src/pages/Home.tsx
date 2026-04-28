@@ -60,7 +60,7 @@ const Home = () => {
         name: "Réfrigérateur Sub-Zero Pro 48",
         description: "Le summum de la conservation alimentaire avec un design industriel en acier inoxydable.",
         price: 8200000,
-        imageUrl: "https://picsum.photos/seed/fridge/800/600",
+        imageUrls: ["https://picsum.photos/seed/fridge/800/600", "https://picsum.photos/seed/fridge2/800/600"],
         stock: 5,
         category: "refrigerateurs",
         allowInstallments: true,
@@ -70,7 +70,7 @@ const Home = () => {
         name: "Piano de Cuisson La Cornue Château 150",
         description: "Fabriqué à la main sur commande, une pièce maîtresse pour toute cuisine de luxe.",
         price: 29500000,
-        imageUrl: "https://picsum.photos/seed/stove/800/600",
+        imageUrls: ["https://picsum.photos/seed/stove/800/600", "https://picsum.photos/seed/stove2/800/600"],
         stock: 2,
         category: "fours",
         allowInstallments: true,
@@ -80,7 +80,7 @@ const Home = () => {
         name: "Lave-vaisselle Miele Diamond Series",
         description: "Silence absolu et performance de nettoyage inégalée pour vos cristaux les plus précieux.",
         price: 2100000,
-        imageUrl: "https://picsum.photos/seed/dishwasher/800/600",
+        imageUrls: ["https://picsum.photos/seed/dishwasher/800/600", "https://picsum.photos/seed/dishwasher2/800/600"],
         stock: 10,
         category: "lave-vaisselle",
         allowTontine: true
@@ -89,7 +89,7 @@ const Home = () => {
         name: "Machine à Café Intégrée Gaggenau 400",
         description: "L'art de l'espresso parfait, intégré harmonieusement dans votre cuisine.",
         price: 3150000,
-        imageUrl: "https://picsum.photos/seed/coffee/800/600",
+        imageUrls: ["https://picsum.photos/seed/coffee/800/600"],
         stock: 8,
         category: "petit-electromenager",
         allowInstallments: true
@@ -128,7 +128,7 @@ const Home = () => {
     >
       <Link to={`/item/${item.id}`} className="block relative aspect-[4/3] overflow-hidden">
         <img 
-          src={item.imageUrl} 
+          src={item.imageUrls?.[0] || item.imageUrl || `https://picsum.photos/seed/${item.id}/800/600`} 
           alt={item.name} 
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           referrerPolicy="no-referrer"
