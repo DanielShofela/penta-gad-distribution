@@ -28,20 +28,15 @@ const Navbar = () => {
     <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          <div className="flex items-center gap-2">
-            <Link to="/" className="flex items-center gap-2">
-              {settings?.logoUrl ? (
-                <img src={settings.logoUrl} alt="Logo" className="h-10 w-auto object-contain" referrerPolicy="no-referrer" />
-              ) : (
-                <div className="w-10 h-10 bg-blue-900 rounded-lg flex items-center justify-center text-yellow-500 font-bold text-xl">P</div>
-              )}
-              <span className="text-lg sm:text-xl font-bold text-blue-900">{settings?.siteName || "PENTA GAD"}</span>
-            </Link>
-          </div>
-
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-6">
-            <div className="relative group">
+          <div className="flex items-center gap-2 sm:gap-6">
+            {/* Mobile Menu Toggle (Left) */}
+            <div className="md:hidden">
+              <button onClick={() => setIsOpen(!isOpen)} className="text-gray-600 p-2">
+                {isOpen ? <X size={28} /> : <Menu size={28} />}
+              </button>
+            </div>
+            {/* Desktop Catalogue Menu */}
+            <div className="hidden md:block relative group">
               <button className="flex items-center gap-1 text-gray-600 hover:text-blue-900 font-medium py-2">
                 Catalogue <ChevronDown size={16} />
               </button>
@@ -95,6 +90,18 @@ const Navbar = () => {
                 </div>
               </div>
             </div>
+
+            <Link to="/" className="flex items-center gap-2">
+              {settings?.logoUrl ? (
+                <img src={settings.logoUrl} alt="Logo" className="h-10 w-auto object-contain" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="w-10 h-10 bg-blue-900 rounded-lg flex items-center justify-center text-yellow-500 font-bold text-xl">P</div>
+              )}
+              <span className="text-lg sm:text-xl font-bold text-blue-900">{settings?.siteName || "PENTA GAD"}</span>
+            </Link>
+          </div>
+
+          <div className="hidden md:flex items-center gap-6">
             {user ? (
               <>
                 <div className="relative group">
@@ -165,7 +172,7 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile Cart Action */}
           <div className="md:hidden flex items-center gap-4">
             {user && !isAdmin && (
               <Link to="/cart" className="relative text-gray-600">
@@ -177,9 +184,6 @@ const Navbar = () => {
                 )}
               </Link>
             )}
-            <button onClick={() => setIsOpen(!isOpen)} className="text-gray-600">
-              {isOpen ? <X size={28} /> : <Menu size={28} />}
-            </button>
           </div>
         </div>
       </div>
