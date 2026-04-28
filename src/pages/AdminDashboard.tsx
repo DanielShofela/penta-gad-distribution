@@ -227,6 +227,8 @@ const AdminItems = () => {
       reference: formData.get('reference') as string,
       specifications: formData.get('specifications') as string,
       configurations: formData.get('configurations') as string,
+      deliveryPrice: Number(formData.get('deliveryPrice')),
+      warranty: formData.get('warranty') as string,
       allowInstallments: formData.get('allowInstallments') === 'on',
       allowTontine: formData.get('allowTontine') === 'on',
       imageUrl: itemImagePreview || `https://picsum.photos/seed/${Math.random()}/800/600`
@@ -391,6 +393,16 @@ const AdminItems = () => {
                       </optgroup>
                     ))}
                   </select>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-400 mb-1">Garantie (ex: 12 MOIS)</label>
+                    <input name="warranty" defaultValue={editingItem?.warranty} className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" placeholder="ex: 12 MOIS" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-400 mb-1">Frais de Livraison (0 = Gratuit)</label>
+                    <input name="deliveryPrice" type="number" defaultValue={editingItem?.deliveryPrice || 0} className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-400 mb-1">Image de l'article</label>

@@ -25,6 +25,8 @@ export interface Item {
   reference?: string;
   specifications?: string;
   configurations?: string;
+  deliveryPrice?: number;
+  warranty?: string;
   allowInstallments?: boolean; // 4 months
   allowTontine?: boolean; // 100 days
 }

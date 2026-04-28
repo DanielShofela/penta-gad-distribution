@@ -182,8 +182,10 @@ const ItemDetail = () => {
             <div className="flex justify-between items-start gap-4 mb-4">
               <div>
                 {item.brand && <span className="text-blue-600 font-black text-xs uppercase tracking-[0.2em] mb-2 block">{item.brand}</span>}
-                <h1 className="text-3xl lg:text-4xl font-black text-blue-900 leading-tight">{item.name}</h1>
-                {item.reference && <p className="text-gray-400 text-sm mt-2 font-mono">Référence : {item.reference}</p>}
+                <h1 className="text-3xl lg:text-4xl font-black text-blue-900 leading-tight">
+                  {item.name} {item.warranty && <span className="text-blue-600/50 block sm:inline">GARANTIE : {item.warranty}</span>}
+                </h1>
+                {item.reference && <p className="text-gray-400 text-sm mt-2 font-mono uppercase tracking-widest">Référence : {item.reference}</p>}
               </div>
               <button 
                 onClick={() => setIsFavorite(!isFavorite)}
@@ -222,14 +224,20 @@ const ItemDetail = () => {
             <div className="flex items-center gap-3 p-4 rounded-2xl bg-blue-50 border border-blue-100">
               <Truck className="text-blue-900" size={24} />
               <div>
-                <h4 className="font-bold text-blue-900 text-sm">Livraison Premium</h4>
-                <p className="text-blue-700 text-xs">Installation incluse</p>
+                <h4 className="font-bold text-blue-900 text-sm">
+                  {item.deliveryPrice === 0 ? "Livraison Gratuite" : "Livraison Standard"}
+                </h4>
+                <p className="text-blue-700 text-xs">
+                  {item.deliveryPrice === 0 ? "Installation incluse" : `Frais: ${formatCurrency(item.deliveryPrice || 0)}`}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 rounded-2xl bg-yellow-50 border border-yellow-100">
               <ShieldCheck className="text-yellow-600" size={24} />
               <div>
-                <h4 className="font-bold text-yellow-700 text-sm">Garantie 5 ans</h4>
+                <h4 className="font-bold text-yellow-700 text-sm">
+                  {item.warranty ? `Garantie ${item.warranty}` : "Garantie Constructeur"}
+                </h4>
                 <p className="text-yellow-600 text-xs">Service après-vente VIP</p>
               </div>
             </div>

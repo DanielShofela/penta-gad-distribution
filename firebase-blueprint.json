@@ -31,6 +31,8 @@
         "reference": { "type": "string" },
         "specifications": { "type": "string" },
         "configurations": { "type": "string" },
+        "deliveryPrice": { "type": "number" },
+        "warranty": { "type": "string" },
         "allowInstallments": { "type": "boolean" },
         "allowTontine": { "type": "boolean" }
       },
