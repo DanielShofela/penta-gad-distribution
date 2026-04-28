@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item, Review } from '../types';
 import { useCart } from '../CartContext';
@@ -225,6 +225,16 @@ const ItemDetail = () => {
       };
 
       await addDoc(collection(db, 'items', id, 'reviews'), reviewData);
+      
+      // Update Item average rating and review count
+      const updatedReviews = [...reviews, { id: 'temp', ...reviewData } as Review];
+      const newAverageRating = updatedReviews.reduce((acc, r) => acc + r.rating, 0) / updatedReviews.length;
+      
+      await updateDoc(doc(db, 'items', id), {
+        averageRating: newAverageRating,
+        reviewCount: updatedReviews.length
+      });
+
       setNewReview({ rating: 5, comment: '', userName: '' });
       toast.success("Merci ! Votre avis a été publié.");
     } catch (error) {
@@ -270,6 +280,10 @@ const ItemDetail = () => {
 
   if (!item) return null;
 
+  const averageRating = reviews.length > 0 
+    ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
+    : 0;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
       {/* Desktop Navigation */}
@@ -308,9 +322,31 @@ const ItemDetail = () => {
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />
-              {item.allowTontine && (
-                <div className="absolute top-6 left-6 bg-yellow-500 text-blue-900 px-4 py-1.5 rounded-full font-black text-xs uppercase tracking-widest shadow-xl">
-                  Tontine Disponible
+              
+              {/* Product Badges */}
+              <div className="absolute top-6 left-6 flex flex-col gap-2">
+                {item.allowTontine && (
+                  <div className="bg-yellow-500 text-blue-900 px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest shadow-xl border border-yellow-400">
+                    Tontine Disponible
+                  </div>
+                )}
+                {item.allowInstallments && (
+                  <div className="bg-blue-900 text-white px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest shadow-xl border border-blue-800">
+                    Paiement Échelonné
+                  </div>
+                )}
+              </div>
+
+              {/* Rating Overlay */}
+              {reviews.length > 0 && (
+                <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-md px-3 py-2 rounded-2xl flex items-center gap-2 shadow-2xl border border-white/50">
+                  <div className="flex bg-yellow-400/10 p-1 rounded-lg">
+                    <Star size={14} className="text-yellow-400 fill-yellow-400" />
+                  </div>
+                  <div className="flex flex-col leading-none">
+                    <span className="font-black text-blue-900 text-sm tracking-tight">{averageRating.toFixed(1)}</span>
+                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{reviews.length} Avis</span>
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -583,9 +619,10 @@ const ItemDetail = () => {
                 <AnimatePresence>
                   {activeTab === tab.id && (
                     <motion.div 
-                      initial={{ height: 0 }} 
-                      animate={{ height: 'auto' }} 
-                      exit={{ height: 0 }}
+                      key={`tab-content-${tab.id}`}
+                      initial={{ height: 0, opacity: 0 }} 
+                      animate={{ height: 'auto', opacity: 1 }} 
+                      exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden bg-gray-50/30"
                     >
                       <div className="px-6 py-4 text-sm text-gray-500 leading-relaxed whitespace-pre-line">

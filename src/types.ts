@@ -41,6 +41,8 @@ export interface Item {
   warranty?: string;
   allowInstallments?: boolean; // 4 months
   allowTontine?: boolean; // 100 days
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 export interface OrderItem {

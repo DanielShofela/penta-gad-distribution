@@ -4,7 +4,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item } from '../types';
 import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
-import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package, ArrowLeft, Star } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -136,6 +136,12 @@ const Home = () => {
         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-blue-900 font-bold text-sm">
           {formatCurrency(item.price)}
         </div>
+        {(item.averageRating && item.averageRating > 0) ? (
+          <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-2 py-1 rounded-xl flex items-center gap-1 shadow-sm border border-white/50">
+            <Star size={12} className="text-yellow-400 fill-yellow-400" />
+            <span className="font-black text-blue-900 text-xs">{item.averageRating.toFixed(1)}</span>
+          </div>
+        ) : null}
       </Link>
       <div className="p-5">
         <Link to={`/item/${item.id}`}>
@@ -160,9 +166,9 @@ const Home = () => {
         <p className="text-gray-500 text-xs line-clamp-1 mb-3">
           {item.description}
         </p>
-        <div className="flex items-center justify-between">
-          <span className={item.stock > 0 ? "text-green-600 text-[10px] font-bold uppercase" : "text-red-600 text-[10px] font-bold uppercase"}>
-            {item.stock > 0 ? `${item.stock} dispo` : "Épuisé"}
+        <div className="flex items-center justify-between mt-auto">
+          <span className={item.stock > 0 ? "text-green-600 text-[10px] font-black uppercase tracking-wider" : "text-red-600 text-[10px] font-black uppercase tracking-wider"}>
+            {item.stock > 0 ? `${item.stock} en stock` : "Épuisé"}
           </span>
           {!isAdmin && (
             <button 
@@ -173,9 +179,10 @@ const Home = () => {
                 toast.success(`${item.name} ajouté au panier`);
               }}
               disabled={item.stock <= 0}
-              className="bg-blue-900 text-white p-2 rounded-lg hover:bg-blue-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="bg-blue-900 text-white px-3 py-2 rounded-xl hover:bg-blue-800 transition-all active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              <ShoppingCart size={16} />
+              <Plus size={14} strokeWidth={3} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Ajouter</span>
             </button>
           )}
         </div>
