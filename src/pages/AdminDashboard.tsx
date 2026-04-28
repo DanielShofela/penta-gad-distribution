@@ -5,7 +5,7 @@ import { collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, doc, order
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item, Order, PaymentPlan, UserProfile, Payment } from '../types';
 import { CATEGORY_GROUPS } from '../constants';
-import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Plus, Trash2, Edit2, CheckCircle, Clock, AlertCircle, ChevronRight, Search, TrendingUp, DollarSign, PackageCheck, Settings as SettingsIcon, Eye, Mail, Phone, MapPin, X } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Plus, Trash2, Edit2, CheckCircle, Clock, AlertCircle, ChevronRight, Search, TrendingUp, DollarSign, PackageCheck, Settings as SettingsIcon, Eye, Mail, Phone, MapPin, X, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -220,6 +220,7 @@ const AdminItems = () => {
     const itemData = {
       name: formData.get('name') as string,
       description: formData.get('description') as string,
+      fullDescription: formData.get('fullDescription') as string,
       price: Number(formData.get('price')),
       stock: Number(formData.get('stock')),
       category: formData.get('category') as string,
@@ -290,17 +291,40 @@ const AdminItems = () => {
                   <input name="name" defaultValue={editingItem?.name} required className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-400 mb-1">Description Courte</label>
-                  <textarea name="description" defaultValue={editingItem?.description} required rows={3} className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" />
+                  <label className="block text-sm font-bold text-gray-400 mb-1">Description Courte (Card)</label>
+                  <textarea name="description" defaultValue={editingItem?.description} required rows={2} className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-black text-blue-900 uppercase tracking-widest mb-2">Description Complète (Page Article)</label>
+                  <textarea name="fullDescription" defaultValue={editingItem?.fullDescription} rows={8} className="w-full p-4 rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-900 bg-gray-50 text-sm" placeholder="Détails, avantages, témoignages..."></textarea>
+                </div>
+                <div className="grid grid-cols-1 gap-6">
                   <div>
-                    <label className="block text-sm font-bold text-gray-400 mb-1">Spécifications Techniques</label>
-                    <textarea name="specifications" defaultValue={editingItem?.specifications} rows={4} className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" placeholder="Un point par ligne..."></textarea>
+                    <label className="block text-sm font-black text-blue-900 uppercase tracking-widest mb-2 flex items-center gap-2">
+                       <ShieldCheck size={16} /> Spécifications Techniques
+                    </label>
+                    <div className="bg-gray-50 rounded-2xl p-1 border border-gray-100">
+                      <textarea 
+                        name="specifications" 
+                        defaultValue={editingItem?.specifications} 
+                        rows={12} 
+                        className="w-full p-4 bg-transparent outline-none focus:ring-0 text-sm font-mono leading-relaxed" 
+                        placeholder="Exemple:&#10;Marque : SMART TECHNOLOGY&#10;&#10;CARACTÉRISTIQUES PRINCIPALES&#10;Modèle : STR-188M&#10;Volume total : 165 L&#10;Couleur : Gris"
+                      ></textarea>
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-2 italic px-2">
+                      Astuce : Utilisez "Clé : Valeur" pour un affichage en tableau et des majuscules pour les titres de section.
+                    </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-400 mb-1">Configurations / Options</label>
-                    <textarea name="configurations" defaultValue={editingItem?.configurations} rows={4} className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900" placeholder="Versions, couleurs..."></textarea>
+                    <label className="block text-sm font-black text-blue-900 uppercase tracking-widest mb-2">Configurations / Options</label>
+                    <textarea 
+                      name="configurations" 
+                      defaultValue={editingItem?.configurations} 
+                      rows={6} 
+                      className="w-full p-4 rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-900 bg-gray-50 text-sm font-mono" 
+                      placeholder="Exemple:&#10;Garantie : 12 mois&#10;Couleur : Gris&#10;Poids : 36kg"
+                    ></textarea>
                   </div>
                 </div>
               </div>

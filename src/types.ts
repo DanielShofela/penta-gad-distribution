@@ -13,10 +13,21 @@ export interface UserProfile {
   nameHistory?: string[];
 }
 
+export interface Review {
+  id: string;
+  itemId: string;
+  userId?: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  createdAt: any;
+}
+
 export interface Item {
   id: string;
   name: string;
   description: string;
+  fullDescription?: string;
   price: number;
   imageUrl: string;
   stock: number;

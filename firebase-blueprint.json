@@ -16,6 +16,20 @@
       },
       "required": ["uid", "email", "role"]
     },
+    "Review": {
+      "title": "Review",
+      "description": "User review for an item",
+      "type": "object",
+      "properties": {
+        "itemId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "rating": { "type": "integer" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["itemId", "userName", "rating", "comment", "createdAt"]
+    },
     "Item": {
       "title": "Item",
       "description": "Luxury appliance item",
@@ -23,6 +37,7 @@
       "properties": {
         "name": { "type": "string" },
         "description": { "type": "string" },
+        "fullDescription": { "type": "string" },
         "price": { "type": "number" },
         "imageUrl": { "type": "string" },
         "stock": { "type": "integer" },
@@ -106,6 +121,10 @@
     "/items/{itemId}": {
       "schema": "Item",
       "description": "Product catalog"
+    },
+    "/items/{itemId}/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Reviews for a specific item"
     },
     "/orders/{orderId}": {
       "schema": "Order",

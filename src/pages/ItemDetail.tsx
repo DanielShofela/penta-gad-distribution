@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { Item } from '../types';
+import { Item, Review } from '../types';
 import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
-import { ShoppingCart, ArrowLeft, Plus, Minus, CheckCircle, Package, ShieldCheck, Truck, DollarSign, Heart, Share2, Star, ChevronRight } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Plus, Minus, CheckCircle, Package, ShieldCheck, Truck, DollarSign, Heart, Share2, Star, ChevronRight, User, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { formatCurrency, cn } from '../lib/utils';
 import { getCategoryName, CATEGORY_GROUPS } from '../constants';
 
@@ -18,9 +20,83 @@ const ItemDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'specs' | 'config' | 'desc' | 'reviews'>('desc');
   const [isFavorite, setIsFavorite] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [newReview, setNewReview] = useState({ rating: 5, comment: '', userName: '' });
+  const [submittingReview, setSubmittingReview] = useState(false);
+  
   const { addToCart } = useCart();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!id) return;
+    
+    // Fetch Item
+    const fetchItem = async () => {
+      try {
+        const docRef = doc(db, 'items', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setItem({ id: docSnap.id, ...docSnap.data() } as Item);
+        } else {
+          toast.error("Article introuvable");
+          navigate('/');
+        }
+      } catch (error) {
+        handleFirestoreError(error, OperationType.GET, `items/${id}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Fetch Reviews
+    const reviewsQuery = query(
+      collection(db, 'items', id, 'reviews'),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribeReviews = onSnapshot(reviewsQuery, (snapshot) => {
+      const reviewsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Review[];
+      setReviews(reviewsData);
+    }, (error) => {
+      console.error("Error fetching reviews:", error);
+    });
+
+    fetchItem();
+    return () => unsubscribeReviews();
+  }, [id, navigate]);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !newReview.comment) return;
+    if (!user && !newReview.userName) {
+      toast.error("Veuillez entrer votre nom pour laisser un avis");
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      const reviewData = {
+        itemId: id,
+        userId: user?.uid || null,
+        userName: user?.displayName || newReview.userName,
+        rating: newReview.rating,
+        comment: newReview.comment,
+        createdAt: serverTimestamp()
+      };
+
+      await addDoc(collection(db, 'items', id, 'reviews'), reviewData);
+      setNewReview({ rating: 5, comment: '', userName: '' });
+      toast.success("Merci ! Votre avis a été publié.");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `items/${id}/reviews`);
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const getBreadcrumbs = () => {
     if (!item) return null;
@@ -48,26 +124,46 @@ const ItemDetail = () => {
     );
   };
 
-  useEffect(() => {
-    if (!id) return;
-    const fetchItem = async () => {
-      try {
-        const docRef = doc(db, 'items', id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setItem({ id: docSnap.id, ...docSnap.data() } as Item);
-        } else {
-          toast.error("Article introuvable");
-          navigate('/');
-        }
-      } catch (error) {
-        handleFirestoreError(error, OperationType.GET, `items/${id}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchItem();
-  }, [id, navigate]);
+  const FormattedAttributes = ({ content, emptyMessage }: { content?: string, emptyMessage: string }) => {
+    if (!content) return <p className="text-gray-400 italic text-sm text-center py-8">{emptyMessage}</p>;
+    
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
+        {content.split('\n').map((line, i) => {
+          const trimmed = line.trim();
+          if (!trimmed) return <div key={i} className="col-span-full h-4" />;
+          
+          // Header detection: all caps or specifically formatted
+          const isHeader = trimmed === trimmed.toUpperCase() && trimmed.length > 3;
+          
+          if (isHeader) {
+            return (
+              <h4 key={i} className="col-span-full font-black text-blue-900 text-[10px] mt-6 mb-3 uppercase tracking-[0.2em] border-l-4 border-blue-900 pl-3">
+                {trimmed}
+              </h4>
+            );
+          }
+
+          if (trimmed.includes(':')) {
+            const [key, ...val] = trimmed.split(':');
+            return (
+              <div key={i} className="flex flex-col py-3 border-b border-gray-50 group">
+                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 group-hover:text-blue-600 transition-colors">{key.trim()}</span>
+                <span className="text-sm font-black text-blue-900 leading-tight">{val.join(':').trim()}</span>
+              </div>
+            );
+          }
+
+          return (
+            <div key={i} className="flex items-center gap-3 text-sm text-gray-600 py-3 border-b border-gray-50 col-span-full">
+              <CheckCircle size={14} className="text-blue-900/20 flex-shrink-0" />
+              <span className="font-bold">{trimmed}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -146,29 +242,151 @@ const ItemDetail = () => {
             <div className="p-8 min-h-[200px]">
               <AnimatePresence mode="wait">
                 {activeTab === 'desc' && (
-                  <motion.div key="desc" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-gray-600 text-sm leading-relaxed">
-                    {item.description}
+                  <motion.div key="desc" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
+                    {item.fullDescription || item.description}
                   </motion.div>
                 )}
                 {activeTab === 'specs' && (
-                  <motion.div key="specs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-                    {item.specifications?.split('\n').map((spec, i) => (
-                      <div key={i} className="flex items-center gap-3 text-sm text-gray-600 border-b border-gray-50 pb-2">
-                        <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
-                        <span>{spec}</span>
-                      </div>
-                    )) || <p className="text-gray-400 italic text-sm text-center py-4">Aucune spécification technique détaillée.</p>}
+                  <motion.div key="specs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <FormattedAttributes content={item.specifications} emptyMessage="Aucune spécification technique détaillée." />
                   </motion.div>
                 )}
                 {activeTab === 'config' && (
-                  <motion.div key="config" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-gray-600 text-sm leading-relaxed">
-                    {item.configurations || <p className="text-gray-400 italic text-sm text-center py-4">Pas de configuration particulière renseignée.</p>}
+                  <motion.div key="config" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <FormattedAttributes content={item.configurations} emptyMessage="Pas de configuration particulière renseignée." />
                   </motion.div>
                 )}
                 {activeTab === 'reviews' && (
-                  <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-8">
-                    <Star size={32} className="mx-auto text-yellow-400 mb-2 opacity-50" />
-                    <p className="text-gray-500 text-sm">Soyez le premier à donner votre avis sur cet article !</p>
+                  <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-12">
+                    {/* Review Stats */}
+                    <div className="flex flex-col md:flex-row items-center gap-8 bg-gray-50 rounded-3xl p-8 border border-gray-100">
+                      <div className="text-center">
+                        <div className="text-5xl font-black text-blue-900 mb-2">
+                          {reviews.length > 0 
+                            ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+                            : "0.0"}
+                        </div>
+                        <div className="flex justify-center mb-1">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star 
+                              key={star} 
+                              size={16} 
+                              className={star <= (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                            />
+                          ))}
+                        </div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{reviews.length} Avis Clients</p>
+                      </div>
+                      
+                      <div className="flex-1 space-y-2 w-full">
+                        {[5, 4, 3, 2, 1].map(rating => {
+                          const count = reviews.filter(r => r.rating === rating).length;
+                          const percent = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+                          return (
+                            <div key={rating} className="flex items-center gap-4">
+                              <span className="text-xs font-bold text-gray-400 w-4">{rating}</span>
+                              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-900 rounded-full" style={{ width: `${percent}%` }} />
+                              </div>
+                              <span className="text-xs font-bold text-gray-400 w-8">{count}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Review List */}
+                    <div className="space-y-6">
+                      {reviews.length > 0 ? (
+                        reviews.map(review => (
+                          <div key={review.id} className="border-b border-gray-50 pb-6 last:border-0 group">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-900 border border-blue-100">
+                                  <User size={20} />
+                                </div>
+                                <div>
+                                  <h4 className="font-black text-sm text-blue-900">{review.userName}</h4>
+                                  <div className="flex gap-0.5">
+                                    {[1, 2, 3, 4, 5].map(star => (
+                                      <Star key={star} size={10} className={star <= review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200"} />
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                {review.createdAt?.toDate ? format(review.createdAt.toDate(), 'dd MMM yyyy', { locale: fr }) : 'A l\'instant'}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 text-sm leading-relaxed pl-13 italic">
+                              "{review.comment}"
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <Star size={32} className="mx-auto text-yellow-400 mb-2 opacity-50" />
+                          <p className="text-gray-500 text-sm">Aucun avis pour le moment. Soyez le premier !</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Write a Review */}
+                    <div className="bg-white rounded-3xl border border-blue-100 p-8 shadow-sm">
+                      <h3 className="text-sm font-black text-blue-900 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                        <Send size={16} /> Laisser votre avis
+                      </h3>
+                      <form onSubmit={handleSubmitReview} className="space-y-4">
+                        {!user && (
+                          <div>
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Votre Nom</label>
+                            <input 
+                              type="text" 
+                              required 
+                              className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-blue-900 transition-all text-sm"
+                              placeholder="ex: Jean Koffi"
+                              value={newReview.userName}
+                              onChange={e => setNewReview({...newReview, userName: e.target.value})}
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Votre Note</label>
+                          <div className="flex gap-3">
+                            {[1, 2, 3, 4, 5].map(star => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setNewReview({...newReview, rating: star})}
+                                className={cn(
+                                  "w-12 h-12 rounded-2xl flex items-center justify-center transition-all border",
+                                  newReview.rating >= star ? "bg-yellow-50 border-yellow-200 text-yellow-400" : "bg-gray-50 border-gray-100 text-gray-300"
+                                )}
+                              >
+                                <Star size={24} fill={newReview.rating >= star ? "currentColor" : "none"} />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Votre Commentaire</label>
+                          <textarea 
+                            required 
+                            rows={4}
+                            className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-blue-900 transition-all text-sm"
+                            placeholder="Partagez votre expérience avec cet article..."
+                            value={newReview.comment}
+                            onChange={e => setNewReview({...newReview, comment: e.target.value})}
+                          />
+                        </div>
+                        <button 
+                          disabled={submittingReview}
+                          className="w-full py-4 bg-blue-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-900/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                        >
+                          {submittingReview ? "Envoi en cours..." : "Publier mon avis"}
+                        </button>
+                      </form>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -303,15 +521,34 @@ const ItemDetail = () => {
                       exit={{ height: 0 }}
                       className="overflow-hidden bg-gray-50/30"
                     >
-                      <div className="px-6 py-4 text-sm text-gray-500 leading-relaxed">
-                        {tab.id === 'desc' && item.description}
-                        {tab.id === 'specs' && (
-                          <div className="space-y-2">
-                             {item.specifications?.split('\n').map((s, i) => <div key={i} className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-900 mt-1.5 flex-shrink-0" />{s}</div>) || "N/A"}
+                      <div className="px-6 py-4 text-sm text-gray-500 leading-relaxed whitespace-pre-line">
+                        {tab.id === 'desc' && (item.fullDescription || item.description)}
+                        {tab.id === 'specs' && <FormattedAttributes content={item.specifications} emptyMessage="N/A" />}
+                        {tab.id === 'config' && <FormattedAttributes content={item.configurations} emptyMessage="N/A" />}
+                        {tab.id === 'reviews' && (
+                          <div className="space-y-6">
+                            {/* Simple Mobile Reviews List */}
+                            <div className="space-y-4">
+                              {reviews.map(review => (
+                                <div key={review.id} className="bg-white p-4 rounded-xl border border-gray-100">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="font-bold text-xs text-blue-900">{review.userName}</span>
+                                    <div className="flex">
+                                      {[1,2,3,4,5].map(s => <Star key={s} size={8} className={s <= review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200"} />)}
+                                    </div>
+                                  </div>
+                                  <p className="text-xs text-gray-500 italic">"{review.comment}"</p>
+                                </div>
+                              ))}
+                            </div>
+                            <button 
+                              onClick={() => setActiveTab('reviews')}
+                              className="w-full p-4 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest"
+                            >
+                              Laisser un avis
+                            </button>
                           </div>
                         )}
-                        {tab.id === 'config' && (item.configurations || "Fiche configuration non disponible.")}
-                        {tab.id === 'reviews' && "Aucun avis pour le moment."}
                       </div>
                     </motion.div>
                   )}
