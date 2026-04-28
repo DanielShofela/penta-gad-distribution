@@ -3,7 +3,7 @@ export const CATEGORY_GROUPS = [
     id: 'froid',
     name: 'FROID & CONSERVATION',
     description: 'Gardez vos aliments et boissons toujours frais',
-    icon: '',
+    icon: 'Snowflake',
     categories: [
       { id: 'refrigerateurs', name: 'Réfrigérateurs' },
       { id: 'congelateurs', name: 'Congélateurs' },
@@ -14,7 +14,7 @@ export const CATEGORY_GROUPS = [
     id: 'cuisson',
     name: 'CUISSON & CUISINE',
     description: 'Équipez votre cuisine efficacement',
-    icon: '',
+    icon: 'Flame',
     categories: [
       { id: 'gazinieres', name: 'Gazinières / Cuisinières' },
       { id: 'fours', name: 'Fours' },
@@ -27,7 +27,7 @@ export const CATEGORY_GROUPS = [
     id: 'petit-electro',
     name: 'PETIT ÉLECTROMÉNAGER',
     description: 'Les indispensables du quotidien',
-    icon: '',
+    icon: 'Coffee',
     categories: [
       { id: 'mixeurs', name: 'Mixeurs / Blenders' },
       { id: 'bouilloires', name: 'Bouilloires' },
@@ -39,7 +39,7 @@ export const CATEGORY_GROUPS = [
     id: 'lavage',
     name: 'LAVAGE & ENTRETIEN',
     description: 'Simplifiez vos tâches ménagères',
-    icon: '',
+    icon: 'Droplets',
     categories: [
       { id: 'machines-laver', name: 'Machines à laver' },
       { id: 'aspirateurs', name: 'Aspirateurs' },
@@ -50,7 +50,7 @@ export const CATEGORY_GROUPS = [
     id: 'climatisation',
     name: 'CLIMATISATION & CONFORT',
     description: 'Restez au frais et à l’aise',
-    icon: '',
+    icon: 'Wind',
     categories: [
       { id: 'climatiseurs', name: 'Climatiseurs' },
       { id: 'ventilateurs', name: 'Ventilateurs' },
@@ -60,7 +60,7 @@ export const CATEGORY_GROUPS = [
     id: 'hightech',
     name: 'HIGH-TECH & BUREAUTIQUE',
     description: 'Travail, études et divertissement',
-    icon: '',
+    icon: 'Smartphone',
     categories: [
       { id: 'televisions', name: 'Télévisions' },
       { id: 'smartphones', name: 'Smartphones (iPhone & Android)' },
@@ -73,7 +73,7 @@ export const CATEGORY_GROUPS = [
     id: 'salon',
     name: 'SALON & SÉJOUR',
     description: 'Confort et accueil',
-    icon: '',
+    icon: 'Sofa',
     categories: [
       { id: 'canapes', name: 'Canapés' },
       { id: 'fauteuils', name: 'Fauteuils' },
@@ -85,7 +85,7 @@ export const CATEGORY_GROUPS = [
     id: 'chambre',
     name: 'CHAMBRE',
     description: 'Repos et organisation',
-    icon: '',
+    icon: 'Bed',
     categories: [
       { id: 'lits', name: 'Lits' },
       { id: 'matelas', name: 'Matelas' },
@@ -97,7 +97,7 @@ export const CATEGORY_GROUPS = [
     id: 'salle-a-manger',
     name: 'SALLE À MANGER',
     description: 'Moments en famille',
-    icon: '',
+    icon: 'Utensils',
     categories: [
       { id: 'tables-manger', name: 'Tables à manger' },
       { id: 'chaises', name: 'Chaises' },
@@ -108,7 +108,7 @@ export const CATEGORY_GROUPS = [
     id: 'bureau',
     name: 'BUREAU & TRAVAIL',
     description: 'Productivité',
-    icon: '',
+    icon: 'Monitor',
     categories: [
       { id: 'bureaux', name: 'Bureaux' },
       { id: 'chaises-bureau', name: 'Chaises de bureau' },
@@ -119,7 +119,7 @@ export const CATEGORY_GROUPS = [
     id: 'rangement',
     name: 'RANGEMENT & ORGANISATION',
     description: 'Optimisez vos espaces',
-    icon: '',
+    icon: 'Layers',
     categories: [
       { id: 'placards', name: 'Placards' },
       { id: 'etageres', name: 'Étagères' },

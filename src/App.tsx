@@ -3,7 +3,26 @@ import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react
 import { AuthProvider, useAuth } from './AuthContext';
 import { CartProvider, useCart } from './CartContext';
 import { Toaster } from 'sonner';
-import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell } from 'lucide-react';
+import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell, Snowflake, Flame, Coffee, Droplets, Wind, Smartphone, Sofa, Bed, Utensils, Monitor, Layers } from 'lucide-react';
+
+const CategoryIcon = ({ iconName, size = 16, className = "" }: { iconName: string, size?: number, className?: string }) => {
+  const icons: Record<string, any> = {
+    Snowflake,
+    Flame,
+    Coffee,
+    Droplets,
+    Wind,
+    Smartphone,
+    Sofa,
+    Bed,
+    Utensils,
+    Monitor,
+    Layers
+  };
+  
+  const IconComponent = icons[iconName] || Grid;
+  return <IconComponent size={size} className={className} />;
+};
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 import { CATEGORY_GROUPS } from './constants';
@@ -54,7 +73,10 @@ const Navbar = () => {
                           }}
                           className="flex items-center justify-between w-full py-2.5 hover:bg-gray-50 rounded-lg transition-colors px-3"
                         >
-                          <h4 className="font-bold text-blue-900 text-[10px] uppercase tracking-widest text-left leading-tight pr-2">{group.name}</h4>
+                          <div className="flex items-center gap-2 pr-2 overflow-hidden">
+                            <CategoryIcon iconName={group.icon} className="text-blue-900/50 flex-shrink-0" />
+                            <h4 className="font-bold text-blue-900 text-[10px] uppercase tracking-widest text-left leading-tight truncate">{group.name}</h4>
+                          </div>
                           <ChevronDown size={14} className={cn("text-gray-400 transition-transform flex-shrink-0", isExpanded && "rotate-180")} />
                         </button>
                         <AnimatePresence>
@@ -236,7 +258,10 @@ const Navbar = () => {
                             onClick={() => toggleGroup(group.id)}
                             className="flex items-center justify-between w-full py-2 hover:bg-gray-50 rounded-lg transition-colors px-2"
                           >
-                            <h4 className="font-bold text-blue-900 text-[10px] uppercase tracking-widest text-left">{group.name}</h4>
+                            <div className="flex items-center gap-3">
+                              <CategoryIcon iconName={group.icon} className="text-blue-900/40" size={18} />
+                              <h4 className="font-bold text-blue-900 text-[10px] uppercase tracking-widest text-left">{group.name}</h4>
+                            </div>
                             <ChevronDown size={14} className={cn("text-gray-400 transition-transform", isExpanded && "rotate-180")} />
                           </button>
                           <AnimatePresence>
