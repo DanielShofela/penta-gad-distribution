@@ -13,6 +13,141 @@ import { fr } from 'date-fns/locale';
 import { formatCurrency, cn } from '../lib/utils';
 import { getCategoryName, CATEGORY_GROUPS } from '../constants';
 
+const FormattedAttributes = ({ content, emptyMessage }: { content?: string, emptyMessage: string }) => {
+  if (!content) return <p className="text-gray-400 italic text-sm text-center py-8">{emptyMessage}</p>;
+  
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
+      {content.split('\n').map((line, i) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={i} className="col-span-full h-4" />;
+        
+        // Header detection: all caps or specifically formatted
+        const isHeader = trimmed === trimmed.toUpperCase() && trimmed.length > 3;
+        
+        if (isHeader) {
+          return (
+            <h4 key={i} className="col-span-full font-black text-blue-900 text-[10px] mt-6 mb-3 uppercase tracking-[0.2em] border-l-4 border-blue-900 pl-3">
+              {trimmed}
+            </h4>
+          );
+        }
+
+        if (trimmed.includes(':')) {
+          const [key, ...val] = trimmed.split(':');
+          return (
+            <div key={i} className="flex flex-col py-3 border-b border-gray-50 group">
+              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 group-hover:text-blue-600 transition-colors">{key.trim()}</span>
+              <span className="text-sm font-black text-blue-900 leading-tight">{val.join(':').trim()}</span>
+            </div>
+          );
+        }
+
+        return (
+          <div key={i} className="flex items-center gap-3 text-sm text-gray-600 py-3 border-b border-gray-50 col-span-full">
+            <CheckCircle size={14} className="text-blue-900/20 flex-shrink-0" />
+            <span className="font-bold">{trimmed}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const ReviewForm = ({ 
+  user, 
+  newReview, 
+  setNewReview, 
+  onSubmit, 
+  submitting,
+  isMobile = false 
+}: { 
+  user: any, 
+  newReview: any, 
+  setNewReview: any, 
+  onSubmit: (e: React.FormEvent) => void,
+  submitting: boolean,
+  isMobile?: boolean
+}) => {
+  const containerClass = isMobile 
+    ? "bg-white rounded-2xl border border-blue-100 p-6 shadow-sm scroll-mt-20"
+    : "bg-white rounded-3xl border border-blue-100 p-8 shadow-sm";
+  
+  const titleClass = isMobile
+    ? "text-[10px] font-black text-blue-900 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"
+    : "text-sm font-black text-blue-900 uppercase tracking-[0.2em] mb-6 flex items-center gap-2";
+
+  const labelClass = isMobile
+    ? "block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5"
+    : "block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2";
+
+  const inputClass = isMobile
+    ? "w-full p-3 rounded-xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-blue-900 transition-all text-xs"
+    : "w-full p-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-blue-900 transition-all text-sm";
+
+  return (
+    <div id={isMobile ? "mobile-review-form" : "review-form"} className={containerClass}>
+      <h3 className={titleClass}>
+        <Send size={isMobile ? 14 : 16} /> Laisser votre avis
+      </h3>
+      <form onSubmit={onSubmit} className="space-y-4">
+        {!user && (
+          <div>
+            <label className={labelClass}>Votre Nom</label>
+            <input 
+              type="text" 
+              required 
+              className={inputClass}
+              placeholder="ex: Jean Koffi"
+              value={newReview.userName ?? ""}
+              onChange={e => setNewReview({...newReview, userName: e.target.value})}
+            />
+          </div>
+        )}
+        <div>
+          <label className={labelClass}>Votre Note</label>
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map(star => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setNewReview({...newReview, rating: star})}
+                className={cn(
+                  isMobile ? "w-10 h-10 rounded-xl" : "w-12 h-12 rounded-2xl",
+                  "flex items-center justify-center transition-all border",
+                  newReview.rating >= star ? "bg-yellow-50 border-yellow-200 text-yellow-400" : "bg-gray-50 border-gray-100 text-gray-300"
+                )}
+              >
+                <Star size={isMobile ? 20 : 24} fill={newReview.rating >= star ? "currentColor" : "none"} />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className={labelClass}>Votre Commentaire</label>
+          <textarea 
+            required 
+            rows={isMobile ? 3 : 4}
+            className={inputClass}
+            placeholder={isMobile ? "Partagez votre expérience..." : "Partagez votre expérience avec cet article..."}
+            value={newReview.comment ?? ""}
+            onChange={e => setNewReview({...newReview, comment: e.target.value})}
+          />
+        </div>
+        <button 
+          disabled={submitting}
+          className={cn(
+            "w-full py-4 bg-blue-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-900/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50",
+            isMobile && "py-3 rounded-xl text-[10px] shadow-lg"
+          )}
+        >
+          {submitting ? "Envoi..." : isMobile ? "Publier" : "Publier mon avis"}
+        </button>
+      </form>
+    </div>
+  );
+};
+
 const ItemDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [item, setItem] = useState<Item | null>(null);
@@ -125,47 +260,6 @@ const ItemDetail = () => {
     );
   };
 
-  const FormattedAttributes = ({ content, emptyMessage }: { content?: string, emptyMessage: string }) => {
-    if (!content) return <p className="text-gray-400 italic text-sm text-center py-8">{emptyMessage}</p>;
-    
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
-        {content.split('\n').map((line, i) => {
-          const trimmed = line.trim();
-          if (!trimmed) return <div key={i} className="col-span-full h-4" />;
-          
-          // Header detection: all caps or specifically formatted
-          const isHeader = trimmed === trimmed.toUpperCase() && trimmed.length > 3;
-          
-          if (isHeader) {
-            return (
-              <h4 key={i} className="col-span-full font-black text-blue-900 text-[10px] mt-6 mb-3 uppercase tracking-[0.2em] border-l-4 border-blue-900 pl-3">
-                {trimmed}
-              </h4>
-            );
-          }
-
-          if (trimmed.includes(':')) {
-            const [key, ...val] = trimmed.split(':');
-            return (
-              <div key={i} className="flex flex-col py-3 border-b border-gray-50 group">
-                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 group-hover:text-blue-600 transition-colors">{key.trim()}</span>
-                <span className="text-sm font-black text-blue-900 leading-tight">{val.join(':').trim()}</span>
-              </div>
-            );
-          }
-
-          return (
-            <div key={i} className="flex items-center gap-3 text-sm text-gray-600 py-3 border-b border-gray-50 col-span-full">
-              <CheckCircle size={14} className="text-blue-900/20 flex-shrink-0" />
-              <span className="font-bold">{trimmed}</span>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -175,140 +269,6 @@ const ItemDetail = () => {
   }
 
   if (!item) return null;
-
-  const ReviewsPanel = () => (
-    <div className="space-y-12">
-      {/* Review Stats */}
-      <div className="flex flex-col md:flex-row items-center gap-8 bg-gray-50 rounded-3xl p-8 border border-gray-100">
-        <div className="text-center">
-          <div className="text-5xl font-black text-blue-900 mb-2">
-            {reviews.length > 0 
-              ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
-              : "0.0"}
-          </div>
-          <div className="flex justify-center mb-1">
-            {[1, 2, 3, 4, 5].map(star => (
-              <Star 
-                key={star} 
-                size={16} 
-                className={star <= (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
-              />
-            ))}
-          </div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{reviews.length} Avis Clients</p>
-        </div>
-        
-        <div className="flex-1 space-y-2 w-full">
-          {[5, 4, 3, 2, 1].map(rating => {
-            const count = reviews.filter(r => r.rating === rating).length;
-            const percent = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
-            return (
-              <div key={rating} className="flex items-center gap-4">
-                <span className="text-xs font-bold text-gray-400 w-4">{rating}</span>
-                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-900 rounded-full" style={{ width: `${percent}%` }} />
-                </div>
-                <span className="text-xs font-bold text-gray-400 w-8">{count}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Review List */}
-      <div className="space-y-6">
-        {reviews.length > 0 ? (
-          reviews.map(review => (
-            <div key={review.id} className="border-b border-gray-50 pb-6 last:border-0 group">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-900 border border-blue-100">
-                    <User size={20} />
-                  </div>
-                  <div>
-                    <h4 className="font-black text-sm text-blue-900">{review.userName}</h4>
-                    <div className="flex gap-0.5">
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <Star key={star} size={10} className={star <= review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200"} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  {review.createdAt?.toDate ? format(review.createdAt.toDate(), 'dd MMM yyyy', { locale: fr }) : 'A l\'instant'}
-                </span>
-              </div>
-              <p className="text-gray-600 text-sm leading-relaxed pl-13 italic">
-                "{review.comment}"
-              </p>
-            </div>
-          ))
-        ) : (
-          <div className="text-center py-8">
-            <Star size={32} className="mx-auto text-yellow-400 mb-2 opacity-50" />
-            <p className="text-gray-500 text-sm">Aucun avis pour le moment. Soyez le premier !</p>
-          </div>
-        )}
-      </div>
-
-      {/* Write a Review */}
-      <div id="review-form" className="bg-white rounded-3xl border border-blue-100 p-8 shadow-sm">
-        <h3 className="text-sm font-black text-blue-900 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-          <Send size={16} /> Laisser votre avis
-        </h3>
-        <form onSubmit={handleSubmitReview} className="space-y-4">
-          {!user && (
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Votre Nom</label>
-              <input 
-                type="text" 
-                required 
-                className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-blue-900 transition-all text-sm"
-                placeholder="ex: Jean Koffi"
-                value={newReview.userName}
-                onChange={e => setNewReview({...newReview, userName: e.target.value})}
-              />
-            </div>
-          )}
-          <div>
-            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Votre Note</label>
-            <div className="flex gap-3">
-              {[1, 2, 3, 4, 5].map(star => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setNewReview({...newReview, rating: star})}
-                  className={cn(
-                    "w-12 h-12 rounded-2xl flex items-center justify-center transition-all border",
-                    newReview.rating >= star ? "bg-yellow-50 border-yellow-200 text-yellow-400" : "bg-gray-50 border-gray-100 text-gray-300"
-                  )}
-                >
-                  <Star size={24} fill={newReview.rating >= star ? "currentColor" : "none"} />
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Votre Commentaire</label>
-            <textarea 
-              required 
-              rows={4}
-              className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-blue-900 transition-all text-sm"
-              placeholder="Partagez votre expérience avec cet article..."
-              value={newReview.comment}
-              onChange={e => setNewReview({...newReview, comment: e.target.value})}
-            />
-          </div>
-          <button 
-            disabled={submittingReview}
-            className="w-full py-4 bg-blue-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-900/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
-          >
-            {submittingReview ? "Envoi en cours..." : "Publier mon avis"}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
@@ -413,8 +373,87 @@ const ItemDetail = () => {
                   </motion.div>
                 )}
                 {activeTab === 'reviews' && (
-                  <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <ReviewsPanel />
+                  <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-12">
+                    {/* Review Stats */}
+                    <div className="flex flex-col md:flex-row items-center gap-8 bg-gray-50 rounded-3xl p-8 border border-gray-100">
+                      <div className="text-center">
+                        <div className="text-5xl font-black text-blue-900 mb-2">
+                          {reviews.length > 0 
+                            ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+                            : "0.0"}
+                        </div>
+                        <div className="flex justify-center mb-1">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star 
+                              key={star} 
+                              size={16} 
+                              className={star <= (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                            />
+                          ))}
+                        </div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{reviews.length} Avis Clients</p>
+                      </div>
+                      
+                      <div className="flex-1 space-y-2 w-full">
+                        {[5, 4, 3, 2, 1].map(rating => {
+                          const count = reviews.filter(r => r.rating === rating).length;
+                          const percent = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+                          return (
+                            <div key={rating} className="flex items-center gap-4">
+                              <span className="text-xs font-bold text-gray-400 w-4">{rating}</span>
+                              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-900 rounded-full" style={{ width: `${percent}%` }} />
+                              </div>
+                              <span className="text-xs font-bold text-gray-400 w-8">{count}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Review List */}
+                    <div className="space-y-6">
+                      {reviews.length > 0 ? (
+                        reviews.map(review => (
+                          <div key={review.id} className="border-b border-gray-50 pb-6 last:border-0 group">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-900 border border-blue-100">
+                                  <User size={20} />
+                                </div>
+                                <div>
+                                  <h4 className="font-black text-sm text-blue-900">{review.userName}</h4>
+                                  <div className="flex gap-0.5">
+                                    {[1, 2, 3, 4, 5].map(star => (
+                                      <Star key={star} size={10} className={star <= review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200"} />
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                {review.createdAt?.toDate ? format(review.createdAt.toDate(), 'dd MMM yyyy', { locale: fr }) : 'A l\'instant'}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 text-sm leading-relaxed pl-13 italic">
+                              "{review.comment}"
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <Star size={32} className="mx-auto text-yellow-400 mb-2 opacity-50" />
+                          <p className="text-gray-500 text-sm">Aucun avis pour le moment. Soyez le premier !</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <ReviewForm 
+                      user={user} 
+                      newReview={newReview} 
+                      setNewReview={setNewReview} 
+                      onSubmit={handleSubmitReview} 
+                      submitting={submittingReview} 
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -466,8 +505,8 @@ const ItemDetail = () => {
           </div>
 
           {/* Features */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 border border-blue-100">
+          <div className="flex flex-wrap gap-3 mb-8">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 border border-blue-100 w-fit min-w-[160px]">
               <Truck className="text-blue-900" size={18} />
               <div>
                 <h4 className="font-bold text-blue-900 text-xs">
@@ -478,7 +517,7 @@ const ItemDetail = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-yellow-50 border border-yellow-100">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-yellow-50 border border-yellow-100 w-fit min-w-[160px]">
               <ShieldCheck className="text-yellow-600" size={18} />
               <div>
                 <h4 className="font-bold text-yellow-700 text-xs">
@@ -554,8 +593,92 @@ const ItemDetail = () => {
                         {tab.id === 'specs' && <FormattedAttributes content={item.specifications} emptyMessage="N/A" />}
                         {tab.id === 'config' && <FormattedAttributes content={item.configurations} emptyMessage="N/A" />}
                         {tab.id === 'reviews' && (
-                          <div className="p-4">
-                            <ReviewsPanel />
+                          <div className="p-4 space-y-8">
+                            {/* Review Stats */}
+                            <div className="flex flex-col items-center gap-6 bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                              <div className="text-center">
+                                <div className="text-4xl font-black text-blue-900 mb-1">
+                                  {reviews.length > 0 
+                                    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+                                    : "0.0"}
+                                </div>
+                                <div className="flex justify-center mb-1">
+                                  {[1, 2, 3, 4, 5].map(star => (
+                                    <Star 
+                                      key={star} 
+                                      size={12} 
+                                      className={star <= (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                                    />
+                                  ))}
+                                </div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{reviews.length} Avis</p>
+                              </div>
+                              
+                              <div className="w-full space-y-1.5">
+                                {[5, 4, 3, 2, 1].map(rating => {
+                                  const count = reviews.filter(r => r.rating === rating).length;
+                                  const percent = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+                                  return (
+                                    <div key={rating} className="flex items-center gap-3">
+                                      <span className="text-[10px] font-bold text-gray-400 w-3">{rating}</span>
+                                      <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                        <div className="h-full bg-blue-900 rounded-full" style={{ width: `${percent}%` }} />
+                                      </div>
+                                      <span className="text-[10px] font-bold text-gray-400 w-6">{count}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            <button 
+                              onClick={() => document.getElementById('mobile-review-form')?.scrollIntoView({ behavior: 'smooth' })}
+                              className="w-full py-3 bg-blue-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg"
+                            >
+                              Laisser un avis
+                            </button>
+
+                            {/* Review List */}
+                            <div className="space-y-4">
+                              {reviews.length > 0 ? (
+                                reviews.map(review => (
+                                  <div key={review.id} className="bg-white p-4 rounded-xl border border-gray-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-900 border border-blue-100">
+                                          <User size={16} />
+                                        </div>
+                                        <div>
+                                          <h4 className="font-black text-[11px] text-blue-900 leading-tight">{review.userName}</h4>
+                                          <div className="flex gap-0.5">
+                                            {[1, 2, 3, 4, 5].map(star => (
+                                              <Star key={star} size={8} className={star <= review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200"} />
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
+                                        {review.createdAt?.toDate ? format(review.createdAt.toDate(), 'dd MMM', { locale: fr }) : 'Maintenant'}
+                                      </span>
+                                    </div>
+                                    <p className="text-gray-600 text-xs italic leading-relaxed">
+                                      "{review.comment}"
+                                    </p>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-center text-gray-400 text-xs py-4 italic">Soyez le premier à donner votre avis !</p>
+                              )}
+                            </div>
+
+                            <ReviewForm 
+                              user={user} 
+                              newReview={newReview} 
+                              setNewReview={setNewReview} 
+                              onSubmit={handleSubmitReview} 
+                              submitting={submittingReview} 
+                              isMobile={true}
+                            />
                           </div>
                         )}
                       </div>
