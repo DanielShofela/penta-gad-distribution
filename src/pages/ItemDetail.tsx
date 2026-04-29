@@ -170,23 +170,20 @@ const ItemDetail = () => {
   useEffect(() => {
     if (!id) return;
     
-    // Fetch Item
-    const fetchItem = async () => {
-      try {
-        const docRef = doc(db, 'items', id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setItem({ id: docSnap.id, ...docSnap.data() } as Item);
-        } else {
-          toast.error("Article introuvable");
-          navigate('/');
-        }
-      } catch (error) {
-        handleFirestoreError(error, OperationType.GET, `items/${id}`);
-      } finally {
-        setLoading(false);
+    // Fetch Item with onSnapshot for real-time updates
+    const itemRef = doc(db, 'items', id);
+    const unsubscribeItem = onSnapshot(itemRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setItem({ id: docSnap.id, ...docSnap.data() } as Item);
+      } else {
+        toast.error("Article introuvable");
+        navigate('/');
       }
-    };
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `items/${id}`);
+      setLoading(false);
+    });
 
     // Fetch Reviews
     const reviewsQuery = query(
@@ -204,9 +201,33 @@ const ItemDetail = () => {
       console.error("Error fetching reviews:", error);
     });
 
-    fetchItem();
-    return () => unsubscribeReviews();
+    return () => {
+      unsubscribeItem();
+      unsubscribeReviews();
+    };
   }, [id, navigate]);
+
+  // Data Synchronization: If summary fields are missing or wrong in the item doc, update them
+  useEffect(() => {
+    if (id && item) {
+      const actualAvg = reviews.length > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length : 0;
+      const actualCount = reviews.length;
+      
+      // Check if we need to update the item document (missing fields or mismatch)
+      const needsSync = 
+        (item.reviewCount !== actualCount) || 
+        (actualCount > 0 && item.averageRating === undefined) ||
+        (actualCount > 0 && Math.abs((item.averageRating || 0) - actualAvg) > 0.05);
+
+      if (needsSync) {
+        console.log(`Syncing item ${id} review stats: ${actualCount} reviews, avg ${actualAvg.toFixed(2)}`);
+        updateDoc(doc(db, 'items', id), {
+          averageRating: actualAvg,
+          reviewCount: actualCount
+        }).catch(err => console.error("Failed to sync item metadata", err));
+      }
+    }
+  }, [id, item, reviews]);
 
   const handleSubmitReview = async (reviewData: { rating: number, comment: string, userName?: string }) => {
     if (!id || !reviewData.comment) return;
@@ -229,12 +250,13 @@ const ItemDetail = () => {
       await addDoc(collection(db, 'items', id, 'reviews'), fullReviewData);
       
       // Update Item average rating and review count
-      const updatedReviews = [...reviews, { id: 'temp', ...fullReviewData } as Review];
-      const newAverageRating = updatedReviews.reduce((acc, r) => acc + r.rating, 0) / updatedReviews.length;
+      const totalRating = reviews.reduce((acc, r) => acc + r.rating, 0) + reviewData.rating;
+      const newReviewCount = reviews.length + 1;
+      const newAverageRating = totalRating / newReviewCount;
       
       await updateDoc(doc(db, 'items', id), {
         averageRating: newAverageRating,
-        reviewCount: updatedReviews.length
+        reviewCount: newReviewCount
       });
 
       toast.success("Merci ! Votre avis a été publié.");

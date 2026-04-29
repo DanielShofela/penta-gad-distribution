@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, addDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, addDoc, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item } from '../types';
 import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
-import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package, ArrowLeft, Star, Heart } from 'lucide-react';
+import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package, ArrowLeft, Star, Heart, RefreshCcw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { formatCurrency } from '../lib/utils';
+import { formatCurrency, cn } from '../lib/utils';
 import { getCategoryName, CATEGORY_GROUPS } from '../constants';
 
 const Home = () => {
@@ -44,6 +44,44 @@ const Home = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const syncAllRatings = async () => {
+    if (!isAdmin) return;
+    const loadingToast = toast.loading("Synchronisation des avis en cours...");
+    
+    try {
+      let updatedCount = 0;
+      for (const item of items) {
+        const reviewsRef = collection(db, 'items', item.id, 'reviews');
+        const reviewsSnap = await getDocs(reviewsRef);
+        
+        if (!reviewsSnap.empty) {
+          const reviewsData = reviewsSnap.docs.map(d => d.data());
+          const totalRating = reviewsData.reduce((acc, r: any) => acc + (r.rating || 0), 0);
+          const count = reviewsData.length;
+          const avg = totalRating / count;
+          
+          await updateDoc(doc(db, 'items', item.id), {
+            averageRating: avg,
+            reviewCount: count
+          });
+          updatedCount++;
+        } else {
+          // If no reviews but item has stats, reset them
+          if (item.reviewCount !== 0) {
+            await updateDoc(doc(db, 'items', item.id), {
+              averageRating: 0,
+              reviewCount: 0
+            });
+          }
+        }
+      }
+      toast.success(`Synchronisation terminée ! ${updatedCount} articles mis à jour.`, { id: loadingToast });
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur lors de la synchronisation", { id: loadingToast });
+    }
+  };
+
   // Group items by category group for the home view
   const groupedItems = CATEGORY_GROUPS.map(group => ({
     ...group,
@@ -65,7 +103,9 @@ const Home = () => {
         stock: 5,
         category: "refrigerateurs",
         allowInstallments: true,
-        allowTontine: true
+        allowTontine: true,
+        averageRating: 4.8,
+        reviewCount: 12
       },
       {
         name: "Piano de Cuisson La Cornue Château 150",
@@ -75,7 +115,9 @@ const Home = () => {
         stock: 2,
         category: "fours",
         allowInstallments: true,
-        allowTontine: false
+        allowTontine: false,
+        averageRating: 5.0,
+        reviewCount: 3
       },
       {
         name: "Lave-vaisselle Miele Diamond Series",
@@ -84,7 +126,9 @@ const Home = () => {
         imageUrls: ["https://picsum.photos/seed/dishwasher/800/600", "https://picsum.photos/seed/dishwasher2/800/600"],
         stock: 10,
         category: "lave-vaisselle",
-        allowTontine: true
+        allowTontine: true,
+        averageRating: 4.5,
+        reviewCount: 28
       },
       {
         name: "Machine à Café Intégrée Gaggenau 400",
@@ -93,7 +137,9 @@ const Home = () => {
         imageUrls: ["https://picsum.photos/seed/coffee/800/600"],
         stock: 8,
         category: "petit-electromenager",
-        allowInstallments: true
+        allowInstallments: true,
+        averageRating: 4.7,
+        reviewCount: 15
       }
     ];
 
@@ -167,20 +213,44 @@ const Home = () => {
           </button>
         </div>
 
-        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-blue-900 font-bold text-sm">
-          {formatCurrency(item.price)}
-        </div>
-        {(item.averageRating && item.averageRating > 0) ? (
-          <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-2 py-1 rounded-xl flex items-center gap-1 shadow-sm border border-white/50">
-            <Star size={12} className="text-yellow-400 fill-yellow-400" />
-            <span className="font-black text-blue-900 text-xs">{item.averageRating.toFixed(1)}</span>
+        <div className="absolute top-4 right-4 flex flex-col items-end gap-1 z-10 pointer-events-none">
+          <div className="bg-white px-3 py-1.5 rounded-full text-blue-900 font-black text-xs shadow-xl ring-1 ring-black/5">
+            {formatCurrency(item.price)}
           </div>
-        ) : null}
+        </div>
       </div>
       <div className="p-5">
         <Link to={`/item/${item.id}`}>
-          <h3 className="text-lg font-bold text-blue-900 mb-1 hover:text-blue-700 transition-colors line-clamp-1">{item.name}</h3>
+          <h3 className="text-lg font-bold text-blue-900 mb-1 hover:text-blue-700 transition-colors line-clamp-1 uppercase tracking-tight">{item.name}</h3>
         </Link>
+
+        {/* Improved Rating Display - Much more prominent */}
+        <div className="flex items-center justify-between mb-3 bg-gray-50/50 p-2 rounded-xl border border-gray-100/50">
+          <div className="flex items-center gap-1">
+            <div className="flex items-center">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star 
+                  key={star} 
+                  size={14} 
+                  fill={star <= Math.round(item.averageRating || 0) ? "#facc15" : "transparent"} 
+                  className={star <= Math.round(item.averageRating || 0) ? "text-yellow-400" : "text-gray-200"}
+                  strokeWidth={2.5}
+                />
+              ))}
+            </div>
+            <span className="text-[11px] font-black text-blue-900 ml-1">
+              {item.reviewCount && item.reviewCount > 0 ? (item.averageRating || 0).toFixed(1) : "—"}
+            </span>
+          </div>
+          <span className={cn(
+            "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shadow-sm border transition-colors",
+            item.reviewCount && item.reviewCount > 0 
+              ? "text-blue-600 bg-white border-blue-50" 
+              : "text-gray-400 bg-gray-50 border-gray-100"
+          )}>
+            {item.reviewCount && item.reviewCount > 0 ? `${item.reviewCount} AVIS` : "SANS AVIS"}
+          </span>
+        </div>
         
         <div className="flex flex-wrap gap-1.5 mb-3">
           {item.allowInstallments && (
@@ -272,8 +342,18 @@ const Home = () => {
 
       {/* Header, Search and Filter */}
       <div id="articles-section" className="flex flex-col md:flex-row gap-4 mb-10 items-start md:items-center justify-between">
-        <div className="w-full md:w-auto">
-          <h2 className="text-2xl md:text-3xl font-black text-blue-900 mb-4 md:mb-0 uppercase tracking-tight">{getCategoryTitle()}</h2>
+        <div className="w-full md:w-auto flex flex-col sm:flex-row sm:items-center gap-4">
+          <h2 className="text-2xl md:text-3xl font-black text-blue-900 uppercase tracking-tight">{getCategoryTitle()}</h2>
+          {isAdmin && (
+            <button 
+              onClick={syncAllRatings}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-colors border border-blue-200 w-fit"
+              title="Recalculer les moyennes d'avis de tous les articles"
+            >
+              <RefreshCcw size={14} />
+              Synchroniser les avis
+            </button>
+          )}
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <div className="relative flex-1 sm:w-80">
