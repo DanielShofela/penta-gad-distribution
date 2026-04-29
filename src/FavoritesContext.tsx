@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { doc, setDoc, deleteDoc, onSnapshot, collection, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, onSnapshot, collection, serverTimestamp, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { db } from './firebase';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
@@ -54,7 +54,14 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           const favRef = doc(db, 'users', user.uid, 'favorites', id);
           const snap = await getDoc(favRef);
           if (!snap.exists()) {
-            await setDoc(favRef, { addedAt: serverTimestamp() });
+            try {
+              await setDoc(favRef, { addedAt: serverTimestamp() });
+              // Also update global count
+              const itemRef = doc(db, 'items', id);
+              await updateDoc(itemRef, { favoriteCount: increment(1) });
+            } catch (err) {
+              console.error("Error syncing local favorite", id, err);
+            }
           }
         }
         // Clear local storage after sync
@@ -70,15 +77,18 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const toggleFavorite = async (itemId: string, itemName: string) => {
     const isFav = favoriteIds.has(itemId);
+    const itemRef = doc(db, 'items', itemId);
 
     if (user) {
       const favRef = doc(db, 'users', user.uid, 'favorites', itemId);
       try {
         if (isFav) {
           await deleteDoc(favRef);
+          await updateDoc(itemRef, { favoriteCount: increment(-1) });
           toast.info(`${itemName} retiré des favoris`);
         } else {
           await setDoc(favRef, { addedAt: serverTimestamp() });
+          await updateDoc(itemRef, { favoriteCount: increment(1) });
           toast.success(`${itemName} ajouté aux favoris`);
         }
       } catch (error) {
@@ -99,6 +109,8 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setLocalFavorites(newLocal);
       localStorage.setItem('guest_favorites', JSON.stringify(newLocal));
       setFavoriteIds(new Set(newLocal));
+      // Note: We don't update global favoriteCount for guests to prevent spam/abuse
+      // as our rules require isSignedIn() for updating items metadata.
     }
   };
 

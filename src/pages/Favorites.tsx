@@ -93,18 +93,25 @@ const Favorites = () => {
               <div className="p-5">
                 <h3 className="text-lg font-bold text-blue-900 mb-1 group-hover:text-blue-700 transition-colors uppercase tracking-tight line-clamp-1">{item.name}</h3>
                 
-                <div className="flex items-center gap-1 mb-4">
-                   <div className="flex items-center">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star 
-                        key={star} 
-                        size={12} 
-                        fill={star <= Math.round(item.averageRating || 0) ? "#facc15" : "transparent"} 
-                        className={star <= Math.round(item.averageRating || 0) ? "text-yellow-400" : "text-gray-200"}
-                      />
-                    ))}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-1">
+                    <div className="flex items-center">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star 
+                          key={star} 
+                          size={12} 
+                          fill={star <= Math.round(item.averageRating || 0) ? "#facc15" : "transparent"} 
+                          className={star <= Math.round(item.averageRating || 0) ? "text-yellow-400" : "text-gray-200"}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-400">({item.reviewCount || 0})</span>
                   </div>
-                  <span className="text-[10px] font-bold text-gray-400">({item.reviewCount || 0})</span>
+                  
+                  <div className="flex items-center gap-1 bg-red-50 px-1.5 py-0.5 rounded-md">
+                    <Heart size={10} fill="#ef4444" className="text-red-500" />
+                    <span className="text-[10px] font-black text-red-600">{item.favoriteCount || 0}</span>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between mt-auto">

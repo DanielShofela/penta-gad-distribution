@@ -192,31 +192,41 @@ const Home = () => {
         </Link>
 
         {/* Improved Rating Display - Much more prominent */}
-        <div className="flex items-center justify-between mb-3 bg-gray-50/50 p-2 rounded-xl border border-gray-100/50">
-          <div className="flex items-center gap-1">
-            <div className="flex items-center">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star 
-                  key={star} 
-                  size={14} 
-                  fill={star <= Math.round(item.averageRating || 0) ? "#facc15" : "transparent"} 
-                  className={star <= Math.round(item.averageRating || 0) ? "text-yellow-400" : "text-gray-200"}
-                  strokeWidth={2.5}
-                />
-              ))}
+        <div className="flex flex-col gap-2 mb-3 bg-gray-50/50 p-2.5 rounded-xl border border-gray-100/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <div className="flex items-center">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star 
+                    key={star} 
+                    size={12} 
+                    fill={star <= Math.round(item.averageRating || 0) ? "#facc15" : "transparent"} 
+                    className={star <= Math.round(item.averageRating || 0) ? "text-yellow-400" : "text-gray-200"}
+                    strokeWidth={2.5}
+                  />
+                ))}
+              </div>
+              <span className="text-[11px] font-black text-blue-900 ml-1">
+                {item.reviewCount && item.reviewCount > 0 ? (item.averageRating || 0).toFixed(1) : "—"}
+              </span>
             </div>
-            <span className="text-[11px] font-black text-blue-900 ml-1">
-              {item.reviewCount && item.reviewCount > 0 ? (item.averageRating || 0).toFixed(1) : "—"}
-            </span>
+            
+            <div className="flex items-center gap-2">
+               <div className="flex items-center gap-1 bg-red-50 px-1.5 py-0.5 rounded-md border border-red-100/50">
+                <Heart size={10} fill="#ef4444" className="text-red-500" />
+                <span className="text-[10px] font-black text-red-600">{item.favoriteCount || 0}</span>
+              </div>
+              
+              <span className={cn(
+                "text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md shadow-sm border transition-colors",
+                item.reviewCount && item.reviewCount > 0 
+                  ? "text-blue-600 bg-white border-blue-50" 
+                  : "text-gray-400 bg-gray-50 border-gray-100"
+              )}>
+                {item.reviewCount && item.reviewCount > 0 ? `${item.reviewCount} AVIS` : "SANS AVIS"}
+              </span>
+            </div>
           </div>
-          <span className={cn(
-            "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shadow-sm border transition-colors",
-            item.reviewCount && item.reviewCount > 0 
-              ? "text-blue-600 bg-white border-blue-50" 
-              : "text-gray-400 bg-gray-50 border-gray-100"
-          )}>
-            {item.reviewCount && item.reviewCount > 0 ? `${item.reviewCount} AVIS` : "SANS AVIS"}
-          </span>
         </div>
         
         <div className="flex flex-wrap gap-1.5 mb-3">

@@ -43,6 +43,7 @@ export interface Item {
   allowTontine?: boolean; // 100 days
   averageRating?: number;
   reviewCount?: number;
+  favoriteCount?: number;
 }
 
 export interface OrderItem {

@@ -367,17 +367,28 @@ const ItemDetail = () => {
               </div>
 
               {/* Rating Overlay */}
-              {reviews.length > 0 && (
-                <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-md px-3 py-2 rounded-2xl flex items-center gap-2 shadow-2xl border border-white/50">
-                  <div className="flex bg-yellow-400/10 p-1 rounded-lg">
-                    <Star size={14} className="text-yellow-400 fill-yellow-400" />
+              <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-md px-3 py-2 rounded-2xl flex flex-col gap-2 shadow-2xl border border-white/50">
+                {reviews.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="flex bg-yellow-400/10 p-1 rounded-lg">
+                      <Star size={14} className="text-yellow-400 fill-yellow-400" />
+                    </div>
+                    <div className="flex flex-col leading-none">
+                      <span className="font-black text-blue-900 text-sm tracking-tight">{averageRating.toFixed(1)}</span>
+                      <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{reviews.length} Avis</span>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 pt-1 border-t border-gray-100/50">
+                   <div className="flex bg-red-400/10 p-1 rounded-lg">
+                    <Heart size={14} className="text-red-500 fill-red-500" />
                   </div>
                   <div className="flex flex-col leading-none">
-                    <span className="font-black text-blue-900 text-sm tracking-tight">{averageRating.toFixed(1)}</span>
-                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{reviews.length} Avis</span>
+                    <span className="font-black text-blue-900 text-sm tracking-tight">{item.favoriteCount || 0}</span>
+                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Favoris</span>
                   </div>
                 </div>
-              )}
+              </div>
             </motion.div>
 
             {/* Thumbnails */}
