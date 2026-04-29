@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { CartProvider, useCart } from './CartContext';
 import { FavoritesProvider } from './FavoritesContext';
 import { Toaster } from 'sonner';
-import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell, Snowflake, Flame, Coffee, Droplets, Wind, Smartphone, Sofa, Bed, Utensils, Monitor, Layers, Heart } from 'lucide-react';
+import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell, Snowflake, Flame, Coffee, Droplets, Wind, Smartphone, Sofa, Bed, Utensils, Monitor, Layers, Bookmark } from 'lucide-react';
 
 const CategoryIcon = ({ iconName, size = 16, className = "" }: { iconName: string, size?: number, className?: string }) => {
   const icons: Record<string, any> = {
@@ -125,8 +125,8 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/favorites" className="text-gray-600 hover:text-red-500 p-2 rounded-full hover:bg-gray-50 transition-all">
-              <Heart size={24} />
+            <Link to="/favorites" className="text-gray-600 hover:text-blue-500 p-2 rounded-full hover:bg-gray-50 transition-all">
+              <Bookmark size={24} />
             </Link>
 
             {!isAdmin && (
@@ -313,7 +313,7 @@ const Navbar = () => {
                           <User size={16} /> Mon Espace Client
                         </Link>
                         <Link to="/favorites" onClick={() => setIsOpen(false)} className="flex items-center gap-2 text-gray-600 font-bold py-2 px-2 hover:bg-gray-50 rounded-lg transition-colors text-sm">
-                          <Heart size={16} /> Mes Favoris
+                          <Bookmark size={16} /> Mes Enregistrements
                         </Link>
                         <Link to={isAdmin ? "/admin" : "/dashboard"} onClick={() => setIsOpen(false)} className="flex items-center gap-2 text-gray-600 font-bold py-2 px-2 hover:bg-gray-50 rounded-lg transition-colors text-sm">
                           <Package size={16} /> {isAdmin ? "Admin Panel" : "Commandes & Paiements"}

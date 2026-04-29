@@ -5,7 +5,7 @@ import { Item } from '../types';
 import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
 import { useFavorites } from '../FavoritesContext';
-import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package, ArrowLeft, Star, Heart, RefreshCcw } from 'lucide-react';
+import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package, ArrowLeft, Star, Bookmark, RefreshCcw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -172,11 +172,11 @@ const Home = () => {
             }}
             className={cn(
               "w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform active:scale-90 pointer-events-auto",
-              favoriteIds.has(item.id) ? "bg-red-500 text-white" : "bg-green-500 text-white"
+              favoriteIds.has(item.id) ? "bg-blue-600 text-white" : "bg-green-500 text-white"
             )}
-            title={favoriteIds.has(item.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
+            title={favoriteIds.has(item.id) ? "Retirer" : "Enregistrer"}
           >
-            <Heart size={20} strokeWidth={2.5} fill={favoriteIds.has(item.id) ? "currentColor" : "none"} />
+            <Bookmark size={20} strokeWidth={2.5} fill={favoriteIds.has(item.id) ? "currentColor" : "none"} />
           </button>
         </div>
 
@@ -212,11 +212,6 @@ const Home = () => {
             </div>
             
             <div className="flex items-center gap-2">
-               <div className="flex items-center gap-1 bg-red-50 px-1.5 py-0.5 rounded-md border border-red-100/50">
-                <Heart size={10} fill="#ef4444" className="text-red-500" />
-                <span className="text-[10px] font-black text-red-600">{item.favoriteCount || 0}</span>
-              </div>
-              
               <span className={cn(
                 "text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md shadow-sm border transition-colors",
                 item.reviewCount && item.reviewCount > 0 
@@ -230,18 +225,6 @@ const Home = () => {
         </div>
         
         <div className="flex flex-wrap gap-1.5 mb-3">
-          {item.allowInstallments && (
-            <div className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[9px] font-bold border border-blue-100 flex items-center gap-1">
-              <span className="w-1 h-1 rounded-full bg-blue-500 animate-pulse"></span>
-              Crédit: {formatCurrency(Math.round(item.price / 4))}/m
-            </div>
-          )}
-          {item.allowTontine && (
-            <div className="px-1.5 py-0.5 bg-yellow-50 text-yellow-700 rounded-md text-[9px] font-bold border border-yellow-100 flex items-center gap-1">
-              <span className="w-1 h-1 rounded-full bg-yellow-500 animate-pulse"></span>
-              Tontine: {formatCurrency(Math.round(item.price * 0.01))}/j
-            </div>
-          )}
         </div>
 
         <p className="text-gray-500 text-xs line-clamp-1 mb-3">

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Item } from '../types';
-import { Heart, Package, ShoppingCart, Star, Plus, ChevronRight } from 'lucide-react';
+import { Bookmark, Package, ShoppingCart, Star, Plus, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -58,11 +58,11 @@ const Favorites = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex items-center gap-4 mb-12">
-        <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-500 border border-red-100">
-          <Heart size={24} fill="currentColor" />
+        <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100">
+          <Bookmark size={24} fill="currentColor" />
         </div>
         <div>
-          <h1 className="text-3xl font-black text-blue-900 uppercase tracking-tight">Mes Coups de Cœur</h1>
+          <h1 className="text-3xl font-black text-blue-900 uppercase tracking-tight">Mes Enregistrements</h1>
           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{favorites.length} articles sauvegardés</p>
         </div>
       </div>
@@ -93,25 +93,18 @@ const Favorites = () => {
               <div className="p-5">
                 <h3 className="text-lg font-bold text-blue-900 mb-1 group-hover:text-blue-700 transition-colors uppercase tracking-tight line-clamp-1">{item.name}</h3>
                 
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-1">
-                    <div className="flex items-center">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star 
-                          key={star} 
-                          size={12} 
-                          fill={star <= Math.round(item.averageRating || 0) ? "#facc15" : "transparent"} 
-                          className={star <= Math.round(item.averageRating || 0) ? "text-yellow-400" : "text-gray-200"}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-[10px] font-bold text-gray-400">({item.reviewCount || 0})</span>
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star 
+                        key={star} 
+                        size={12} 
+                        fill={star <= Math.round(item.averageRating || 0) ? "#facc15" : "transparent"} 
+                        className={star <= Math.round(item.averageRating || 0) ? "text-yellow-400" : "text-gray-200"}
+                      />
+                    ))}
                   </div>
-                  
-                  <div className="flex items-center gap-1 bg-red-50 px-1.5 py-0.5 rounded-md">
-                    <Heart size={10} fill="#ef4444" className="text-red-500" />
-                    <span className="text-[10px] font-black text-red-600">{item.favoriteCount || 0}</span>
-                  </div>
+                  <span className="text-[10px] font-bold text-gray-400">({item.reviewCount || 0})</span>
                 </div>
 
                 <div className="flex items-center justify-between mt-auto">
@@ -136,10 +129,10 @@ const Favorites = () => {
       ) : (
         <div className="text-center py-24 bg-white rounded-[2rem] border border-gray-100 shadow-sm max-w-xl mx-auto">
           <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300">
-            <Heart size={40} />
+            <Bookmark size={40} />
           </div>
           <h3 className="text-2xl font-black text-blue-900 mb-3 uppercase tracking-tight">Liste Vide</h3>
-          <p className="text-gray-500 mb-8 font-medium">Vous n'avez pas encore d'articles favoris. Parcourez notre catalogue et cliquez sur le cœur !</p>
+          <p className="text-gray-500 mb-8 font-medium">Vous n'avez pas encore d'articles enregistrés. Enregistrez vos articles préférés pour les retrouver ici !</p>
           <Link to="/" className="inline-flex items-center gap-2 bg-blue-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-900/10 hover:scale-105 active:scale-95 transition-all">
             Explorer le catalogue <ChevronRight size={16} />
           </Link>

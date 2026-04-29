@@ -6,7 +6,7 @@ import { Item, Review } from '../types';
 import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
 import { useFavorites } from '../FavoritesContext';
-import { ShoppingCart, ArrowLeft, Plus, Minus, CheckCircle, Package, ShieldCheck, Truck, DollarSign, Heart, Share2, Star, ChevronRight, User, Send } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Plus, Minus, CheckCircle, Package, ShieldCheck, Truck, DollarSign, Bookmark, Share2, Star, ChevronRight, User, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -158,7 +158,7 @@ const ItemDetail = () => {
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<'specs' | 'config' | 'desc' | 'reviews'>('desc');
+  const [activeTab, setActiveTab] = useState<'specs' | 'desc' | 'reviews'>('desc');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -314,7 +314,7 @@ const ItemDetail = () => {
     : 0;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6 sm:py-12">
       {/* Desktop Navigation */}
       <div className="hidden md:flex items-center justify-between mb-8">
         <button 
@@ -332,8 +332,6 @@ const ItemDetail = () => {
           </button>
         </div>
       </div>
-
-      {getBreadcrumbs()}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
         {/* Image Section */}
@@ -354,16 +352,6 @@ const ItemDetail = () => {
               
               {/* Product Badges */}
               <div className="absolute top-6 left-6 flex flex-col gap-2">
-                {item.allowTontine && (
-                  <div className="bg-yellow-500 text-blue-900 px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest shadow-xl border border-yellow-400">
-                    Tontine Disponible
-                  </div>
-                )}
-                {item.allowInstallments && (
-                  <div className="bg-blue-900 text-white px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest shadow-xl border border-blue-800">
-                    Paiement Échelonné
-                  </div>
-                )}
               </div>
 
               {/* Rating Overlay */}
@@ -379,15 +367,6 @@ const ItemDetail = () => {
                     </div>
                   </div>
                 )}
-                <div className="flex items-center gap-2 pt-1 border-t border-gray-100/50">
-                   <div className="flex bg-red-400/10 p-1 rounded-lg">
-                    <Heart size={14} className="text-red-500 fill-red-500" />
-                  </div>
-                  <div className="flex flex-col leading-none">
-                    <span className="font-black text-blue-900 text-sm tracking-tight">{item.favoriteCount || 0}</span>
-                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Favoris</span>
-                  </div>
-                </div>
               </div>
             </motion.div>
 
@@ -416,7 +395,6 @@ const ItemDetail = () => {
               {[
                 { id: 'desc', label: 'DESCRIPTION' },
                 { id: 'specs', label: 'SPECIFICATIONS' },
-                { id: 'config', label: 'CONFIGURATIONS' },
                 { id: 'reviews', label: 'AVIS CLIENT' }
               ].map(tab => (
                 <button
@@ -441,11 +419,6 @@ const ItemDetail = () => {
                 {activeTab === 'specs' && (
                   <motion.div key="specs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <FormattedAttributes content={item.specifications} emptyMessage="Aucune spécification technique détaillée." />
-                  </motion.div>
-                )}
-                {activeTab === 'config' && (
-                  <motion.div key="config" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <FormattedAttributes content={item.configurations} emptyMessage="Pas de configuration particulière renseignée." />
                   </motion.div>
                 )}
                 {activeTab === 'reviews' && (
@@ -537,6 +510,7 @@ const ItemDetail = () => {
 
         {/* Content Section */}
         <div className="flex flex-col">
+          {getBreadcrumbs()}
           <div className="mb-6 sm:mb-8">
             <div className="flex justify-between items-start gap-4 mb-4">
               <div>
@@ -550,10 +524,11 @@ const ItemDetail = () => {
                 onClick={toggleFavorite}
                 className={cn(
                   "p-3 rounded-2xl border transition-all active:scale-90",
-                  isFavorite ? "bg-red-50 border-red-100 text-red-500" : "bg-gray-50 border-gray-100 text-gray-400 hover:text-blue-900"
+                  isFavorite ? "bg-blue-50 border-blue-100 text-blue-600" : "bg-gray-50 border-gray-100 text-gray-400 hover:text-blue-900"
                 )}
+                title={isFavorite ? "Retirer" : "Enregistrer"}
               >
-                <Heart size={24} fill={isFavorite ? "currentColor" : "none"} />
+                <Bookmark size={24} fill={isFavorite ? "currentColor" : "none"} />
               </button>
             </div>
 
@@ -642,7 +617,6 @@ const ItemDetail = () => {
           <div className="lg:hidden mb-8 space-y-4">
             {[
               { id: 'specs', label: 'SPECIFICATIONS TECHNIQUES' },
-              { id: 'config', label: 'CONFIGURATIONS' },
               { id: 'desc', label: 'DESCRIPTION' },
               { id: 'reviews', label: 'AVIS CLIENT' }
             ].map(tab => (
@@ -666,7 +640,6 @@ const ItemDetail = () => {
                       <div className="px-6 py-4 text-sm text-gray-500 leading-relaxed whitespace-pre-line">
                         {tab.id === 'desc' && (item.fullDescription || item.description)}
                         {tab.id === 'specs' && <FormattedAttributes content={item.specifications} emptyMessage="N/A" />}
-                        {tab.id === 'config' && <FormattedAttributes content={item.configurations} emptyMessage="N/A" />}
                         {tab.id === 'reviews' && (
                           <div className="p-4 space-y-8">
                             {/* Review Stats */}
