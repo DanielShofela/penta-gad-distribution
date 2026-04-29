@@ -4,9 +4,9 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item } from '../types';
 import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
-import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package, ArrowLeft, Star } from 'lucide-react';
+import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package, ArrowLeft, Star, Heart } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { formatCurrency } from '../lib/utils';
 import { getCategoryName, CATEGORY_GROUPS } from '../constants';
@@ -18,6 +18,7 @@ const Home = () => {
   const { addToCart } = useCart();
   const { isAdmin } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const categoryFilter = queryParams.get('category');
 
@@ -126,13 +127,46 @@ const Home = () => {
       transition={{ delay: index * 0.05 }}
       className="bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all group flex-shrink-0 w-[280px] sm:w-[320px]"
     >
-      <Link to={`/item/${item.id}`} className="block relative aspect-[4/3] overflow-hidden">
-        <img 
-          src={item.imageUrls?.[0] || item.imageUrl || `https://picsum.photos/seed/${item.id}/800/600`} 
-          alt={item.name} 
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-          referrerPolicy="no-referrer"
-        />
+      <div className="relative group/card aspect-[4/3] overflow-hidden">
+        <Link to={`/item/${item.id}`} className="block w-full h-full">
+          <img 
+            src={item.imageUrls?.[0] || item.imageUrl || `https://picsum.photos/seed/${item.id}/800/600`} 
+            alt={item.name} 
+            className="w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-500"
+            referrerPolicy="no-referrer"
+          />
+        </Link>
+        
+        {/* Hover Overlay Buttons */}
+        <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover/card:opacity-100 transition-opacity bg-black/5 backdrop-blur-[2px] pointer-events-none">
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (item.stock > 0) {
+                addToCart(item);
+                toast.success(`${item.name} ajouté au panier`);
+              }
+            }}
+            disabled={item.stock <= 0}
+            className="w-12 h-12 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed group/btn pointer-events-auto"
+            title="Ajouter au panier"
+          >
+            <ShoppingCart size={20} strokeWidth={2.5} />
+          </button>
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toast.success(`${item.name} ajouté aux favoris`);
+            }}
+            className="w-12 h-12 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform active:scale-90 pointer-events-auto"
+            title="Ajouter aux favoris"
+          >
+            <Heart size={20} strokeWidth={2.5} />
+          </button>
+        </div>
+
         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-blue-900 font-bold text-sm">
           {formatCurrency(item.price)}
         </div>
@@ -142,7 +176,7 @@ const Home = () => {
             <span className="font-black text-blue-900 text-xs">{item.averageRating.toFixed(1)}</span>
           </div>
         ) : null}
-      </Link>
+      </div>
       <div className="p-5">
         <Link to={`/item/${item.id}`}>
           <h3 className="text-lg font-bold text-blue-900 mb-1 hover:text-blue-700 transition-colors line-clamp-1">{item.name}</h3>
@@ -166,22 +200,26 @@ const Home = () => {
         <p className="text-gray-500 text-xs line-clamp-1 mb-3">
           {item.description}
         </p>
-        <div className="flex items-center justify-between mt-auto">
+        <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between gap-2">
           <span className={item.stock > 0 ? "text-green-600 text-[10px] font-black uppercase tracking-wider" : "text-red-600 text-[10px] font-black uppercase tracking-wider"}>
             {item.stock > 0 ? `${item.stock} en stock` : "Épuisé"}
           </span>
+          
           {!isAdmin && (
             <button 
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                addToCart(item);
-                toast.success(`${item.name} ajouté au panier`);
+                if (item.stock > 0) {
+                  addToCart(item);
+                  toast.success(`${item.name} ajouté au panier`);
+                }
               }}
               disabled={item.stock <= 0}
-              className="bg-blue-900 text-white px-3 py-2 rounded-xl hover:bg-blue-800 transition-all active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+              className="bg-blue-900 text-white px-3 py-2 rounded-xl hover:bg-blue-800 transition-all active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed shadow-lg shadow-blue-900/10 flex items-center justify-center gap-2 border border-blue-900/5 group/btn"
+              title="Ajouter au panier"
             >
-              <Plus size={14} strokeWidth={3} />
+              <Plus size={14} strokeWidth={3} className="transition-transform group-hover/btn:rotate-90" />
               <span className="text-[10px] font-black uppercase tracking-widest">Ajouter</span>
             </button>
           )}
@@ -325,13 +363,28 @@ const Home = () => {
       )}
 
       {(filteredItems.length === 0 || (searchTerm === '' && groupedItems.length === 0)) && !loading && (
-        <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-          <Package size={48} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-xl font-bold text-gray-600">Aucun article trouvé</h3>
-          <p className="text-gray-400 text-sm">Essayez une autre recherche ou explorez les catégories.</p>
+        <div className="text-center py-24 bg-white rounded-[2rem] border border-gray-100 shadow-sm px-6 max-w-2xl mx-auto mt-12">
+          <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-300">
+            <Package size={40} />
+          </div>
+          <h3 className="text-2xl font-black text-blue-900 mb-3 uppercase tracking-tight">Catalogue Vide</h3>
+          <p className="text-gray-500 mb-8 max-w-sm mx-auto">Nous n'avons trouvé aucun article correspondant à vos critères. Essayez de réinitialiser vos filtres.</p>
+          
           {items.length === 0 && (
-            <button onClick={seedData} className="mt-6 text-blue-600 font-bold text-sm underline underline-offset-4">
-              Réinitialiser le catalogue de démonstration
+            <button 
+              onClick={seedData} 
+              className="bg-blue-900 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-900/20 hover:scale-105 active:scale-95 transition-all"
+            >
+              Initialiser le catalogue de démo
+            </button>
+          )}
+          
+          {items.length > 0 && (
+            <button 
+              onClick={() => { setSearchTerm(''); navigate('/'); }} 
+              className="text-blue-600 font-bold hover:underline"
+            >
+              Voir tous les articles
             </button>
           )}
         </div>

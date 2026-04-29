@@ -56,19 +56,23 @@ const FormattedAttributes = ({ content, emptyMessage }: { content?: string, empt
 
 const ReviewForm = ({ 
   user, 
-  newReview, 
-  setNewReview, 
   onSubmit, 
   submitting,
   isMobile = false 
 }: { 
   user: any, 
-  newReview: any, 
-  setNewReview: any, 
-  onSubmit: (e: React.FormEvent) => void,
+  onSubmit: (reviewData: { rating: number, comment: string, userName?: string }) => Promise<void>, 
   submitting: boolean,
   isMobile?: boolean
 }) => {
+  const [localReview, setLocalReview] = useState({ rating: 5, comment: '', userName: '' });
+
+  const handleInnerSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onSubmit(localReview);
+    setLocalReview({ rating: 5, comment: '', userName: '' });
+  };
+
   const containerClass = isMobile 
     ? "bg-white rounded-2xl border border-blue-100 p-6 shadow-sm scroll-mt-20"
     : "bg-white rounded-3xl border border-blue-100 p-8 shadow-sm";
@@ -90,7 +94,7 @@ const ReviewForm = ({
       <h3 className={titleClass}>
         <Send size={isMobile ? 14 : 16} /> Laisser votre avis
       </h3>
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={handleInnerSubmit} className="space-y-4">
         {!user && (
           <div>
             <label className={labelClass}>Votre Nom</label>
@@ -99,8 +103,8 @@ const ReviewForm = ({
               required 
               className={inputClass}
               placeholder="ex: Jean Koffi"
-              value={newReview.userName ?? ""}
-              onChange={e => setNewReview({...newReview, userName: e.target.value})}
+              value={localReview.userName}
+              onChange={e => setLocalReview({...localReview, userName: e.target.value})}
             />
           </div>
         )}
@@ -111,14 +115,14 @@ const ReviewForm = ({
               <button
                 key={star}
                 type="button"
-                onClick={() => setNewReview({...newReview, rating: star})}
+                onClick={() => setLocalReview({...localReview, rating: star})}
                 className={cn(
-                  isMobile ? "w-10 h-10 rounded-xl" : "w-12 h-12 rounded-2xl",
+                   isMobile ? "w-10 h-10 rounded-xl" : "w-12 h-12 rounded-2xl",
                   "flex items-center justify-center transition-all border",
-                  newReview.rating >= star ? "bg-yellow-50 border-yellow-200 text-yellow-400" : "bg-gray-50 border-gray-100 text-gray-300"
+                  localReview.rating >= star ? "bg-yellow-50 border-yellow-200 text-yellow-400" : "bg-gray-50 border-gray-100 text-gray-300"
                 )}
               >
-                <Star size={isMobile ? 20 : 24} fill={newReview.rating >= star ? "currentColor" : "none"} />
+                <Star size={isMobile ? 20 : 24} fill={localReview.rating >= star ? "currentColor" : "none"} />
               </button>
             ))}
           </div>
@@ -130,8 +134,8 @@ const ReviewForm = ({
             rows={isMobile ? 3 : 4}
             className={inputClass}
             placeholder={isMobile ? "Partagez votre expérience..." : "Partagez votre expérience avec cet article..."}
-            value={newReview.comment ?? ""}
-            onChange={e => setNewReview({...newReview, comment: e.target.value})}
+            value={localReview.comment}
+            onChange={e => setLocalReview({...localReview, comment: e.target.value})}
           />
         </div>
         <button 
@@ -156,7 +160,6 @@ const ItemDetail = () => {
   const [activeTab, setActiveTab] = useState<'specs' | 'config' | 'desc' | 'reviews'>('desc');
   const [isFavorite, setIsFavorite] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [newReview, setNewReview] = useState({ rating: 5, comment: '', userName: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   
@@ -205,29 +208,28 @@ const ItemDetail = () => {
     return () => unsubscribeReviews();
   }, [id, navigate]);
 
-  const handleSubmitReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!id || !newReview.comment) return;
-    if (!user && !newReview.userName) {
+  const handleSubmitReview = async (reviewData: { rating: number, comment: string, userName?: string }) => {
+    if (!id || !reviewData.comment) return;
+    if (!user && !reviewData.userName) {
       toast.error("Veuillez entrer votre nom pour laisser un avis");
       return;
     }
 
     setSubmittingReview(true);
     try {
-      const reviewData = {
+      const fullReviewData = {
         itemId: id,
         userId: user?.uid || null,
-        userName: user?.displayName || newReview.userName,
-        rating: newReview.rating,
-        comment: newReview.comment,
+        userName: user?.displayName || reviewData.userName,
+        rating: reviewData.rating,
+        comment: reviewData.comment,
         createdAt: serverTimestamp()
       };
 
-      await addDoc(collection(db, 'items', id, 'reviews'), reviewData);
+      await addDoc(collection(db, 'items', id, 'reviews'), fullReviewData);
       
       // Update Item average rating and review count
-      const updatedReviews = [...reviews, { id: 'temp', ...reviewData } as Review];
+      const updatedReviews = [...reviews, { id: 'temp', ...fullReviewData } as Review];
       const newAverageRating = updatedReviews.reduce((acc, r) => acc + r.rating, 0) / updatedReviews.length;
       
       await updateDoc(doc(db, 'items', id), {
@@ -235,7 +237,6 @@ const ItemDetail = () => {
         reviewCount: updatedReviews.length
       });
 
-      setNewReview({ rating: 5, comment: '', userName: '' });
       toast.success("Merci ! Votre avis a été publié.");
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `items/${id}/reviews`);
@@ -251,21 +252,21 @@ const ItemDetail = () => {
     
     return (
       <nav className="flex items-center gap-2 text-[10px] sm:text-xs text-gray-400 mb-6 font-medium overflow-x-auto whitespace-nowrap pb-2 no-scrollbar">
-        <Link to="/" className="hover:text-blue-900 flex-shrink-0">Accueil</Link>
-        <ChevronRight size={12} className="flex-shrink-0" />
+        <Link to="/" className="hover:text-blue-900 flex-shrink-0 transition-colors uppercase tracking-wider">Accueil</Link>
+        <ChevronRight size={10} className="flex-shrink-0" />
         {group && (
           <>
-            <span className="hover:text-blue-900 flex-shrink-0 cursor-default">{group.name}</span>
-            <ChevronRight size={12} className="flex-shrink-0" />
+            <Link to="/" className="hover:text-blue-900 flex-shrink-0 transition-colors uppercase tracking-wider">{group.name}</Link>
+            <ChevronRight size={10} className="flex-shrink-0" />
           </>
         )}
-        {item.brand && (
+        {category && (
           <>
-            <span className="text-blue-900 font-bold flex-shrink-0">{item.brand}</span>
-            <ChevronRight size={12} className="flex-shrink-0" />
+            <Link to={`/?category=${category.id}`} className="hover:text-blue-900 flex-shrink-0 transition-colors font-bold uppercase tracking-wider text-blue-900/70">{category.name}</Link>
+            <ChevronRight size={10} className="flex-shrink-0" />
           </>
         )}
-        <span className="text-gray-900 font-black flex-shrink-0 max-w-[200px] truncate">{item.name}</span>
+        <span className="text-blue-900 font-black flex-shrink-0 max-w-[200px] truncate uppercase tracking-widest">{item.name}</span>
       </nav>
     );
   };
@@ -485,8 +486,6 @@ const ItemDetail = () => {
 
                     <ReviewForm 
                       user={user} 
-                      newReview={newReview} 
-                      setNewReview={setNewReview} 
                       onSubmit={handleSubmitReview} 
                       submitting={submittingReview} 
                     />
@@ -710,8 +709,6 @@ const ItemDetail = () => {
 
                             <ReviewForm 
                               user={user} 
-                              newReview={newReview} 
-                              setNewReview={setNewReview} 
                               onSubmit={handleSubmitReview} 
                               submitting={submittingReview} 
                               isMobile={true}
