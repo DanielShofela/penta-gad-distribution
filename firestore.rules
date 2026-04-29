@@ -51,6 +51,11 @@ service cloud.firestore {
              (data.createdAt == request.time || data.createdAt is timestamp);
     }
 
+    function isValidFavorite(data) {
+      return data.keys().hasAll(['addedAt']) &&
+             (data.addedAt == request.time || data.addedAt is timestamp);
+    }
+
     // ===============================================================
     // Collection Rules
     // ===============================================================
@@ -60,6 +65,11 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
+
+      match /favorites/{itemId} {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow write: if isSignedIn() && request.auth.uid == userId && isValidId(itemId) && (request.method == 'delete' || isValidFavorite(incoming()));
+      }
     }
 
     match /settings/{settingId} {

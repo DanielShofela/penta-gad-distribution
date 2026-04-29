@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, addDoc, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, addDoc, getDocs, updateDoc, doc, setDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item } from '../types';
 import { useCart } from '../CartContext';
@@ -16,7 +16,34 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const { addToCart } = useCart();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!user) {
+      setFavoriteIds(new Set());
+      return;
+    }
+    const unsubscribe = onSnapshot(collection(db, 'users', user.uid, 'favorites'), (snap) => {
+      setFavoriteIds(new Set(snap.docs.map(d => d.id)));
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  const toggleFavorite = async (item: Item) => {
+    if (!user) {
+      toast.error("Veuillez vous connecter pour ajouter des favoris");
+      return;
+    }
+    const favRef = doc(db, 'users', user.uid, 'favorites', item.id);
+    if (favoriteIds.has(item.id)) {
+      await deleteDoc(favRef);
+      toast.info(`${item.name} retiré des favoris`);
+    } else {
+      await setDoc(favRef, { addedAt: serverTimestamp() });
+      toast.success(`${item.name} ajouté aux favoris`);
+    }
+  };
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
@@ -43,44 +70,6 @@ const Home = () => {
     
     return matchesSearch && matchesCategory;
   });
-
-  const syncAllRatings = async () => {
-    if (!isAdmin) return;
-    const loadingToast = toast.loading("Synchronisation des avis en cours...");
-    
-    try {
-      let updatedCount = 0;
-      for (const item of items) {
-        const reviewsRef = collection(db, 'items', item.id, 'reviews');
-        const reviewsSnap = await getDocs(reviewsRef);
-        
-        if (!reviewsSnap.empty) {
-          const reviewsData = reviewsSnap.docs.map(d => d.data());
-          const totalRating = reviewsData.reduce((acc, r: any) => acc + (r.rating || 0), 0);
-          const count = reviewsData.length;
-          const avg = totalRating / count;
-          
-          await updateDoc(doc(db, 'items', item.id), {
-            averageRating: avg,
-            reviewCount: count
-          });
-          updatedCount++;
-        } else {
-          // If no reviews but item has stats, reset them
-          if (item.reviewCount !== 0) {
-            await updateDoc(doc(db, 'items', item.id), {
-              averageRating: 0,
-              reviewCount: 0
-            });
-          }
-        }
-      }
-      toast.success(`Synchronisation terminée ! ${updatedCount} articles mis à jour.`, { id: loadingToast });
-    } catch (error) {
-      console.error(error);
-      toast.error("Erreur lors de la synchronisation", { id: loadingToast });
-    }
-  };
 
   // Group items by category group for the home view
   const groupedItems = CATEGORY_GROUPS.map(group => ({
@@ -200,16 +189,19 @@ const Home = () => {
           >
             <ShoppingCart size={20} strokeWidth={2.5} />
           </button>
-          <button 
+           <button 
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              toast.success(`${item.name} ajouté aux favoris`);
+              toggleFavorite(item);
             }}
-            className="w-12 h-12 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform active:scale-90 pointer-events-auto"
-            title="Ajouter aux favoris"
+            className={cn(
+              "w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform active:scale-90 pointer-events-auto",
+              favoriteIds.has(item.id) ? "bg-red-500 text-white" : "bg-green-500 text-white"
+            )}
+            title={favoriteIds.has(item.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
           >
-            <Heart size={20} strokeWidth={2.5} />
+            <Heart size={20} strokeWidth={2.5} fill={favoriteIds.has(item.id) ? "currentColor" : "none"} />
           </button>
         </div>
 
@@ -342,18 +334,8 @@ const Home = () => {
 
       {/* Header, Search and Filter */}
       <div id="articles-section" className="flex flex-col md:flex-row gap-4 mb-10 items-start md:items-center justify-between">
-        <div className="w-full md:w-auto flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="w-full md:w-auto">
           <h2 className="text-2xl md:text-3xl font-black text-blue-900 uppercase tracking-tight">{getCategoryTitle()}</h2>
-          {isAdmin && (
-            <button 
-              onClick={syncAllRatings}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-colors border border-blue-200 w-fit"
-              title="Recalculer les moyennes d'avis de tous les articles"
-            >
-              <RefreshCcw size={14} />
-              Synchroniser les avis
-            </button>
-          )}
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <div className="relative flex-1 sm:w-80">

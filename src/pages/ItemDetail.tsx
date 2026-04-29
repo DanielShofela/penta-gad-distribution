@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item, Review } from '../types';
 import { useCart } from '../CartContext';
@@ -168,9 +168,35 @@ const ItemDetail = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!id || !user) {
+      setIsFavorite(false);
+      return;
+    }
+    const unsubscribe = onSnapshot(doc(db, 'users', user.uid, 'favorites', id), (snap) => {
+      setIsFavorite(snap.exists());
+    });
+    return () => unsubscribe();
+  }, [id, user]);
+
+  const toggleFavorite = async () => {
+    if (!id || !item) return;
+    if (!user) {
+      toast.error("Veuillez vous connecter pour ajouter des favoris");
+      return;
+    }
+    
+    const favRef = doc(db, 'users', user.uid, 'favorites', id);
+    if (isFavorite) {
+      await deleteDoc(favRef);
+      toast.info("Retiré des favoris");
+    } else {
+      await setDoc(favRef, { addedAt: serverTimestamp() });
+      toast.success("Ajouté aux favoris");
+    }
+  };
+  useEffect(() => {
     if (!id) return;
     
-    // Fetch Item with onSnapshot for real-time updates
     const itemRef = doc(db, 'items', id);
     const unsubscribeItem = onSnapshot(itemRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -530,7 +556,7 @@ const ItemDetail = () => {
                 {item.reference && <p className="text-gray-400 text-sm mt-2 font-mono uppercase tracking-widest">Référence : {item.reference}</p>}
               </div>
               <button 
-                onClick={() => setIsFavorite(!isFavorite)}
+                onClick={toggleFavorite}
                 className={cn(
                   "p-3 rounded-2xl border transition-all active:scale-90",
                   isFavorite ? "bg-red-50 border-red-100 text-red-500" : "bg-gray-50 border-gray-100 text-gray-400 hover:text-blue-900"

@@ -110,6 +110,15 @@
         "faviconUrl": { "type": "string" },
         "siteName": { "type": "string" }
       }
+    },
+    "Favorite": {
+      "title": "Favorite",
+      "description": "User's favorite item",
+      "type": "object",
+      "properties": {
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["addedAt"]
     }
   },
   "firestore": {
@@ -120,6 +129,10 @@
     "/users/{userId}": {
       "schema": "User",
       "description": "User profiles"
+    },
+    "/users/{userId}/favorites/{itemId}": {
+      "schema": "Favorite",
+      "description": "User's favorite items"
     },
     "/items/{itemId}": {
       "schema": "Item",
