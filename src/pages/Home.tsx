@@ -4,6 +4,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item } from '../types';
 import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
+import { useFavorites } from '../FavoritesContext';
 import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package, ArrowLeft, Star, Heart, RefreshCcw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -16,34 +17,8 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const { addToCart } = useCart();
-  const { user, isAdmin } = useAuth();
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (!user) {
-      setFavoriteIds(new Set());
-      return;
-    }
-    const unsubscribe = onSnapshot(collection(db, 'users', user.uid, 'favorites'), (snap) => {
-      setFavoriteIds(new Set(snap.docs.map(d => d.id)));
-    });
-    return () => unsubscribe();
-  }, [user]);
-
-  const toggleFavorite = async (item: Item) => {
-    if (!user) {
-      toast.error("Veuillez vous connecter pour ajouter des favoris");
-      return;
-    }
-    const favRef = doc(db, 'users', user.uid, 'favorites', item.id);
-    if (favoriteIds.has(item.id)) {
-      await deleteDoc(favRef);
-      toast.info(`${item.name} retiré des favoris`);
-    } else {
-      await setDoc(favRef, { addedAt: serverTimestamp() });
-      toast.success(`${item.name} ajouté aux favoris`);
-    }
-  };
+  const { isAdmin } = useAuth();
+  const { toggleFavorite, favoriteIds } = useFavorites();
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
@@ -193,7 +168,7 @@ const Home = () => {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              toggleFavorite(item);
+              toggleFavorite(item.id, item.name);
             }}
             className={cn(
               "w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform active:scale-90 pointer-events-auto",

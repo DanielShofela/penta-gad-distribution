@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import { CartProvider, useCart } from './CartContext';
+import { FavoritesProvider } from './FavoritesContext';
 import { Toaster } from 'sonner';
 import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell, Snowflake, Flame, Coffee, Droplets, Wind, Smartphone, Sofa, Bed, Utensils, Monitor, Layers, Heart } from 'lucide-react';
 
@@ -403,7 +404,8 @@ export default function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <Router>
+        <FavoritesProvider>
+          <Router>
           <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
             <Navbar />
             <main className="flex-grow">
@@ -422,6 +424,7 @@ export default function App() {
             <Toaster position="top-center" richColors />
           </div>
         </Router>
+        </FavoritesProvider>
       </CartProvider>
     </AuthProvider>
   );

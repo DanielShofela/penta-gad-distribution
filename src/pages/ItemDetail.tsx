@@ -5,6 +5,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item, Review } from '../types';
 import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
+import { useFavorites } from '../FavoritesContext';
 import { ShoppingCart, ArrowLeft, Plus, Minus, CheckCircle, Package, ShieldCheck, Truck, DollarSign, Heart, Share2, Star, ChevronRight, User, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -158,41 +159,20 @@ const ItemDetail = () => {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'specs' | 'config' | 'desc' | 'reviews'>('desc');
-  const [isFavorite, setIsFavorite] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   
   const { addToCart } = useCart();
   const { user, isAdmin } = useAuth();
+  const { toggleFavorite: toggleFavContext, isFavorite: checkFavorite } = useFavorites();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!id || !user) {
-      setIsFavorite(false);
-      return;
-    }
-    const unsubscribe = onSnapshot(doc(db, 'users', user.uid, 'favorites', id), (snap) => {
-      setIsFavorite(snap.exists());
-    });
-    return () => unsubscribe();
-  }, [id, user]);
+  const isFavorite = id ? checkFavorite(id) : false;
 
   const toggleFavorite = async () => {
     if (!id || !item) return;
-    if (!user) {
-      toast.error("Veuillez vous connecter pour ajouter des favoris");
-      return;
-    }
-    
-    const favRef = doc(db, 'users', user.uid, 'favorites', id);
-    if (isFavorite) {
-      await deleteDoc(favRef);
-      toast.info("Retiré des favoris");
-    } else {
-      await setDoc(favRef, { addedAt: serverTimestamp() });
-      toast.success("Ajouté aux favoris");
-    }
+    await toggleFavContext(id, item.name);
   };
   useEffect(() => {
     if (!id) return;

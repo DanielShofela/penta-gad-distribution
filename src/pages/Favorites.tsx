@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useAuth } from '../AuthContext';
 import { Item } from '../types';
 import { Heart, Package, ShoppingCart, Star, Plus, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -9,60 +8,44 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { formatCurrency, cn } from '../lib/utils';
 import { useCart } from '../CartContext';
+import { useFavorites } from '../FavoritesContext';
 
 const Favorites = () => {
-  const { user } = useAuth();
   const { addToCart } = useCart();
+  const { favoriteIds } = useFavorites();
   const [favorites, setFavorites] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    const q = query(
-      collection(db, 'users', user.uid, 'favorites')
-    );
-
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const favoriteIds = snapshot.docs.map(d => d.id);
+    const fetchFavoriteDetails = async () => {
+      setLoading(true);
+      const ids = Array.from(favoriteIds) as string[];
       
-      if (favoriteIds.length === 0) {
+      if (ids.length === 0) {
         setFavorites([]);
         setLoading(false);
         return;
       }
 
-      // We need to fetch the actual item details for each favorite
-      const itemsData: Item[] = [];
-      for (const id of favoriteIds) {
-        const itemDoc = await getDoc(doc(db, 'items', id));
-        if (itemDoc.exists()) {
-          itemsData.push({ id: itemDoc.id, ...itemDoc.data() } as Item);
+      try {
+        const itemsData: Item[] = [];
+        for (const id of ids) {
+          const itemDoc = await getDoc(doc(db, 'items', id));
+          if (itemDoc.exists()) {
+            itemsData.push({ id: itemDoc.id, ...itemDoc.data() } as Item);
+          }
         }
+        setFavorites(itemsData);
+      } catch (error) {
+        console.error("Error fetching favorite items:", error);
+        toast.error("Erreur lors du chargement des favoris");
+      } finally {
+        setLoading(false);
       }
-      
-      setFavorites(itemsData);
-      setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
-  }, [user]);
-
-  if (!user) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-24 text-center">
-        <Heart size={48} className="mx-auto text-gray-300 mb-6" />
-        <h2 className="text-2xl font-black text-blue-900 uppercase mb-4">Connectez-vous</h2>
-        <p className="text-gray-500 mb-8 lowercase font-medium">Veuillez vous connecter pour voir vos articles favoris.</p>
-        <Link to="/" className="bg-blue-900 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs">
-          Retour à l'accueil
-        </Link>
-      </div>
-    );
-  }
+    fetchFavoriteDetails();
+  }, [favoriteIds]);
 
   if (loading) {
     return (
