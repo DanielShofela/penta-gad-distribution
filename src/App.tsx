@@ -124,6 +124,17 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-6">
+            {!isAdmin && (
+              <Link to="/cart" className="relative text-gray-600 hover:text-blue-900 p-2 rounded-full hover:bg-gray-50 transition-all">
+                <ShoppingCart size={24} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-yellow-500 text-blue-900 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+            )}
+
             {user ? (
               <>
                 <div className="relative group">
@@ -158,17 +169,6 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                {!isAdmin && (
-                  <Link to="/cart" className="relative text-gray-600 hover:text-blue-900 p-2 rounded-full hover:bg-gray-50 transition-all">
-                    <ShoppingCart size={24} />
-                    {cartCount > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-yellow-500 text-blue-900 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                        {cartCount}
-                      </span>
-                    )}
-                  </Link>
-                )}
-
                 <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
                   <Link to="/account" className="relative group">
                     <img 
@@ -196,7 +196,7 @@ const Navbar = () => {
 
           {/* Mobile Cart Action */}
           <div className="md:hidden flex items-center gap-4">
-            {user && !isAdmin && (
+            {!isAdmin && (
               <Link to="/cart" className="relative text-gray-600">
                 <ShoppingCart size={24} />
                 {cartCount > 0 && (

@@ -116,22 +116,13 @@ const Cart = () => {
               </div>
             </div>
 
-            {user ? (
-              <button 
-                onClick={() => navigate('/checkout')}
-                className="w-full bg-yellow-500 text-blue-900 py-4 rounded-xl font-bold hover:bg-yellow-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20"
-              >
-                Passer la commande
-                <ArrowRight size={20} />
-              </button>
-            ) : (
-              <button 
-                onClick={login}
-                className="w-full bg-white text-blue-900 py-4 rounded-xl font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-2"
-              >
-                Se connecter pour commander
-              </button>
-            )}
+            <button 
+              onClick={() => navigate('/checkout')}
+              className="w-full bg-yellow-500 text-blue-900 py-4 rounded-xl font-bold hover:bg-yellow-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20"
+            >
+              Passer la commande
+              <ArrowRight size={20} />
+            </button>
             
             <p className="text-center text-xs text-blue-300 mt-6 flex items-center justify-center gap-1">
               <Package size={14} />

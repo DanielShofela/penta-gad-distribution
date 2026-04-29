@@ -4,7 +4,7 @@ import { useAuth } from '../AuthContext';
 import { collection, addDoc, Timestamp, doc, updateDoc, increment } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { PaymentType, OrderStatus, Order } from '../types';
-import { CreditCard, Banknote, ShieldCheck, ChevronRight, CheckCircle, Package, ArrowLeft } from 'lucide-react';
+import { CreditCard, Banknote, ShieldCheck, ChevronRight, CheckCircle, Package, ArrowLeft, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -12,7 +12,7 @@ import { cn, formatCurrency } from '../lib/utils';
 
 const Checkout = () => {
   const { cart, total, clearCart } = useCart();
-  const { user, profile } = useAuth();
+  const { user, profile, login, isLoggingIn } = useAuth();
   const [paymentType, setPaymentType] = useState<PaymentType>('cash');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -25,6 +25,42 @@ const Checkout = () => {
   }, [profile]);
 
   const navigate = useNavigate();
+
+  // Redirect or show login if not authenticated
+  if (!user) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-20 text-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-3xl p-12 shadow-sm border border-gray-100"
+        >
+          <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-900">
+            <User size={40} />
+          </div>
+          <h2 className="text-3xl font-bold text-blue-900 mb-4">Connexion Requise</h2>
+          <p className="text-gray-500 mb-8 text-lg">
+            Vous devez être connecté à votre compte pour finaliser votre commande et bénéficier de notre service de livraison premium.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button 
+              onClick={login}
+              disabled={isLoggingIn}
+              className="bg-blue-900 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-800 transition-all flex items-center justify-center gap-2"
+            >
+              {isLoggingIn ? "Connexion..." : "Se connecter maintenant"}
+            </button>
+            <Link 
+              to="/cart" 
+              className="bg-gray-100 text-gray-600 px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-all"
+            >
+              Retour au panier
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   const handlePlaceOrder = async () => {
     if (!user || cart.length === 0) return;
