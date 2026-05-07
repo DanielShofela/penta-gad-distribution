@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { CartProvider, useCart } from './CartContext';
 import { FavoritesProvider } from './FavoritesContext';
 import { Toaster } from 'sonner';
-import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell, Snowflake, Flame, Coffee, Droplets, Wind, Smartphone, Sofa, Bed, Utensils, Monitor, Layers, Bookmark, Store, Tv, CookingPot, Shirt, Apple, Sparkles, Baby, Bird, MoreHorizontal } from 'lucide-react';
+import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell, Snowflake, Flame, Coffee, Droplets, Wind, Smartphone, Sofa, Bed, Utensils, Monitor, Layers, Bookmark } from 'lucide-react';
 
 export const CategoryIcon = ({ iconName, size = 16, className = "" }: { iconName: string, size?: number, className?: string }) => {
   const icons: Record<string, any> = {
@@ -18,17 +18,7 @@ export const CategoryIcon = ({ iconName, size = 16, className = "" }: { iconName
     Bed,
     Utensils,
     Monitor,
-    Layers,
-    Store,
-    Tv,
-    CookingPot,
-    Home: HomeIcon,
-    Shirt,
-    Apple,
-    Sparkles,
-    Baby,
-    Bird,
-    MoreHorizontal
+    Layers
   };
   
   const IconComponent = icons[iconName] || Grid;
@@ -65,6 +55,7 @@ const Navbar = () => {
                 {isOpen ? <X size={28} /> : <Menu size={28} />}
               </button>
             </div>
+            {/* Logo Section */}
             <Link to="/" className="flex items-center gap-2">
               {settings?.logoUrl ? (
                 <img src={settings.logoUrl} alt="Logo" className="h-10 w-auto object-contain" referrerPolicy="no-referrer" />
