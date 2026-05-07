@@ -53,7 +53,7 @@ export interface OrderItem {
   quantity: number;
 }
 
-export type PaymentType = 'cash' | 'installment';
+export type PaymentType = 'cash' | 'installment' | 'tontine';
 export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 
 export interface Order {
@@ -81,6 +81,7 @@ export interface PaymentPlan {
   remainingAmount: number;
   installmentsCount: number;
   status: PaymentPlanStatus;
+  type?: PaymentType;
 }
 
 export type PaymentStatus = 'pending' | 'completed';

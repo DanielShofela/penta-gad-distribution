@@ -160,7 +160,10 @@ const ClientDashboard = () => {
                     <div className="flex items-center gap-4">
                       <div className="text-right hidden md:block">
                         <div className="font-bold text-blue-900">{formatCurrency(order.totalAmount)}</div>
-                        <div className="text-xs text-gray-400 uppercase tracking-wider">{order.paymentType === 'cash' ? 'Paiement Cash' : 'Paiement Échelonné'}</div>
+                        <div className="text-xs text-gray-400 uppercase tracking-wider">
+                          {order.paymentType === 'cash' ? 'Paiement Cash' : 
+                           order.paymentType === 'tontine' ? 'Tontine' : 'Paiement Échelonné'}
+                        </div>
                       </div>
                       <div className={cn(
                         "px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider h-fit",
@@ -229,7 +232,9 @@ const ClientDashboard = () => {
                   <div className="bg-blue-900 p-8 text-white">
                     <div className="flex justify-between items-start mb-6">
                       <div>
-                        <h3 className="text-2xl font-bold text-yellow-500 mb-1">Plan de Paiement Échelonné</h3>
+                        <h3 className="text-2xl font-bold text-yellow-500 mb-1">
+                          {plan.type === 'tontine' ? 'Tontine Digital' : 'Plan de Paiement Échelonné'}
+                        </h3>
                         <p className="text-blue-200 text-sm">Commande #{plan.orderId.slice(0, 8)}</p>
                       </div>
                       <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold">

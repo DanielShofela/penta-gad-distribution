@@ -566,7 +566,10 @@ const AdminOrders = () => {
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <p className="font-bold text-blue-900">{formatCurrency(order.totalAmount)}</p>
-                  <p className="text-xs text-gray-400 uppercase">{order.paymentType}</p>
+                  <p className="text-xs text-gray-400 uppercase tracking-widest">
+                    {order.paymentType === 'cash' ? 'CASH' : 
+                     order.paymentType === 'tontine' ? 'TONTINE' : 'ÉCHELONNÉ'}
+                  </p>
                 </div>
                 <select 
                   value={order.status || 'pending'}
@@ -634,7 +637,15 @@ const AdminPayments = () => {
           <div key={plan.id} className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
             <div className="bg-gray-50 p-6 border-b border-gray-100 flex justify-between items-center">
               <div>
-                <h4 className="font-bold text-blue-900">Plan #{plan.id.slice(0, 8)}</h4>
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-bold text-blue-900">Plan #{plan.id.slice(0, 8)}</h4>
+                  <span className={cn(
+                    "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full",
+                    plan.type === 'tontine' ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700"
+                  )}>
+                    {plan.type === 'tontine' ? 'Tontine' : 'Échelonné'}
+                  </span>
+                </div>
                 <p className="text-sm font-bold text-blue-700">{plan.clientName}</p>
                 <p className="text-xs text-gray-400">Commande #{plan.orderId.slice(0, 8)}</p>
               </div>

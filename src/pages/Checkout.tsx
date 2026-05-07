@@ -4,7 +4,7 @@ import { useAuth } from '../AuthContext';
 import { collection, addDoc, Timestamp, doc, updateDoc, increment } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { PaymentType, OrderStatus, Order } from '../types';
-import { CreditCard, Banknote, ShieldCheck, ChevronRight, CheckCircle, Package, ArrowLeft, User } from 'lucide-react';
+import { CreditCard, Banknote, ShieldCheck, ChevronRight, CheckCircle, Package, ArrowLeft, User, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -110,16 +110,17 @@ const Checkout = () => {
         return; // Stop if order creation fails
       }
 
-      // If installment, create a payment plan
-      if (paymentType === 'installment' && orderRef) {
+      // If installment or tontine, create a payment plan
+      if ((paymentType === 'installment' || paymentType === 'tontine') && orderRef) {
         const planData = {
           orderId: orderRef.id,
           clientId: user.uid,
           clientName: profile?.displayName || 'Client',
           totalAmount: total,
           remainingAmount: total,
-          installmentsCount: 10, // Default 10 installments
-          status: 'active'
+          installmentsCount: paymentType === 'tontine' ? 100 : 10,
+          status: 'active',
+          type: paymentType
         };
         try {
           await addDoc(collection(db, 'paymentPlans'), planData);
@@ -272,6 +273,22 @@ const Checkout = () => {
                   <p className="text-sm text-gray-500">Réglez en 10 mensualités sans frais</p>
                 </div>
               </button>
+
+              <button 
+                onClick={() => setPaymentType('tontine')}
+                className={cn(
+                  "flex items-center gap-4 p-6 rounded-2xl border-2 transition-all text-left",
+                  paymentType === 'tontine' ? "border-blue-900 bg-blue-50" : "border-gray-100 hover:border-gray-200"
+                )}
+              >
+                <div className={cn("p-3 rounded-xl", paymentType === 'tontine' ? "bg-blue-900 text-white" : "bg-gray-100 text-gray-400")}>
+                  <Users size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-blue-900">Tontine</h3>
+                  <p className="text-sm text-gray-500">Cotisez chaque jour pendant 100 jours</p>
+                </div>
+              </button>
             </div>
 
             {paymentType === 'installment' && (
@@ -285,6 +302,21 @@ const Checkout = () => {
                   <li>Montant mensuel : {formatCurrency(total / 10)}</li>
                   <li>Durée : 10 mois</li>
                   <li>Frais de dossier : {formatCurrency(0)}</li>
+                </ul>
+              </motion.div>
+            )}
+
+            {paymentType === 'tontine' && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100 text-blue-800 text-sm"
+              >
+                <p className="font-bold mb-1">Détails de la tontine :</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Cotisation journalière : {formatCurrency(total / 100)}</li>
+                  <li>Durée : 100 jours</li>
+                  <li>Remise de l'article : Après paiement intégral</li>
                 </ul>
               </motion.div>
             )}
