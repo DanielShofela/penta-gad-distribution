@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, doc, orderBy, Timestamp, where, getDocs, setDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
@@ -180,13 +180,24 @@ const AdminItems = () => {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [formPrice, setFormPrice] = useState<number>(0);
   const [itemImagePreviews, setItemImagePreviews] = useState<string[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
 
   useEffect(() => {
     const q = query(collection(db, 'items'), orderBy('name'));
     return onSnapshot(q, (snap) => {
-      setItems(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Item)));
+      const fetchedItems = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Item));
+      setItems(fetchedItems);
+      
+      // Auto-open edit if param present
+      if (editId) {
+        const toEdit = fetchedItems.find(i => i.id === editId);
+        if (toEdit) {
+          setEditingItem(toEdit);
+        }
+      }
     });
-  }, []);
+  }, [editId]);
 
   useEffect(() => {
     if (editingItem) {
@@ -197,6 +208,15 @@ const AdminItems = () => {
       setFormPrice(0);
     }
   }, [editingItem, isAdding]);
+
+  const closeForm = () => {
+    setIsAdding(false);
+    setEditingItem(null);
+    setItemImagePreviews([]);
+    if (searchParams.has('edit')) {
+      setSearchParams({});
+    }
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -257,9 +277,7 @@ const AdminItems = () => {
         await addDoc(collection(db, 'items'), itemData);
         toast.success("Article ajouté");
       }
-      setIsAdding(false);
-      setEditingItem(null);
-      setItemImagePreviews([]);
+      closeForm();
     } catch (error) {
       toast.error("Erreur lors de l'enregistrement");
     }
@@ -481,7 +499,7 @@ const AdminItems = () => {
                 </div>
                 <div className="flex gap-4 pt-4">
                   <button type="submit" className="flex-grow bg-blue-900 text-white py-3 rounded-xl font-bold hover:bg-blue-800 transition-all">Enregistrer</button>
-                  <button type="button" onClick={() => { setIsAdding(false); setEditingItem(null); }} className="px-6 py-3 rounded-xl font-bold text-gray-400 hover:bg-gray-50">Annuler</button>
+                  <button type="button" onClick={closeForm} className="px-6 py-3 rounded-xl font-bold text-gray-400 hover:bg-gray-50">Annuler</button>
                 </div>
               </div>
             </form>
