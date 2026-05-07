@@ -78,8 +78,7 @@ service cloud.firestore {
     }
 
     match /items/{itemId} {
-      allow get: if isValidId(itemId);
-      allow list: if true;
+      allow read: if true;
       allow create, delete: if isAdmin();
       allow update: if isAdmin() || (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['stock', 'averageRating', 'reviewCount', 'favoriteCount']));
 

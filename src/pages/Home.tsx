@@ -5,7 +5,7 @@ import { Item } from '../types';
 import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
 import { useFavorites } from '../FavoritesContext';
-import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package, ArrowLeft, Star, Bookmark, RefreshCcw } from 'lucide-react';
+import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package, ArrowLeft, Star, Bookmark, RefreshCcw, Grid } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -38,6 +38,22 @@ const Home = () => {
     return () => unsubscribe();
   }, []);
 
+  // Group items by category group
+  const groupedItems = CATEGORY_GROUPS.map(group => ({
+    ...group,
+    items: items.filter(item => {
+      const isInGroup = group.categories.some(cat => cat.id === item.category);
+      return isInGroup;
+    })
+  })).filter(group => group.items.length > 0);
+
+  // Items that don't fit in any group or all items if no groups match
+  const otherItems = items.filter(item => 
+    !CATEGORY_GROUPS.some(group => 
+      group.categories.some(cat => cat.id === item.category)
+    )
+  );
+
   const filteredItems = items.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -46,17 +62,6 @@ const Home = () => {
     
     return matchesSearch && matchesCategory;
   });
-
-  // Group items by category group for the home view
-  const groupedItems = CATEGORY_GROUPS.map(group => ({
-    ...group,
-    items: items.filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const isInGroup = group.categories.some(cat => cat.id === item.category);
-      return matchesSearch && isInGroup;
-    })
-  })).filter(group => group.items.length > 0);
 
   const seedData = async () => {
     const initialItems = [
@@ -356,6 +361,35 @@ const Home = () => {
       {/* Conditional Rendering: Grouped by Category vs Single List */}
       {!categoryFilter && searchTerm === '' ? (
         <div className="space-y-16">
+          {/* New Arrivals/Recent Section for all items */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
+                  <Star size={20} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-blue-900 uppercase tracking-tight">Nouveautés & Sélections</h3>
+                  <p className="text-xs text-gray-400 font-medium">Découvrez nos derniers articles ajoutés</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative group/scroll-container">
+              <div 
+                id="scroll-recent"
+                className="flex overflow-x-auto gap-6 pb-6 pt-2 scrollbar-hide snap-x snap-mandatory scroll-smooth"
+              >
+                {items.slice(0, 10).map((item, idx) => (
+                  <div key={item.id} className="snap-start">
+                    <ItemCard item={item} index={idx} />
+                  </div>
+                ))}
+                <div className="flex-shrink-0 w-4" />
+              </div>
+            </div>
+          </div>
+
           {groupedItems.map((group) => (
             <div key={group.id} className="space-y-6">
               <div className="flex items-center justify-between">
@@ -412,6 +446,25 @@ const Home = () => {
               </div>
             </div>
           ))}
+          {/* Section for other items that don't fit in groups */}
+          {otherItems.length > 0 && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-600">
+                  <Grid size={20} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-blue-900 uppercase tracking-tight">Autres Articles</h3>
+                  <p className="text-xs text-gray-400 font-medium">Parcourez le reste de notre collection</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {otherItems.map((item, index) => (
+                  <ItemCard key={item.id} item={item} index={index} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         /* Regular Grid View for Filtered Results */
