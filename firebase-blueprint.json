@@ -119,12 +119,29 @@
         "addedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["addedAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System notification for users",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["offer", "info", "alert"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["title", "message", "type", "createdAt", "active"]
     }
   },
   "firestore": {
     "/settings/{settingId}": {
       "schema": "Settings",
       "description": "Global settings"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "System notifications"
     },
     "/users/{userId}": {
       "schema": "User",

@@ -4,7 +4,12 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { CartProvider, useCart } from './CartContext';
 import { FavoritesProvider } from './FavoritesContext';
 import { Toaster } from 'sonner';
-import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell, Snowflake, Flame, Coffee, Droplets, Wind, Smartphone, Sofa, Bed, Utensils, Monitor, Layers, Bookmark } from 'lucide-react';
+import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell, Snowflake, Flame, Coffee, Droplets, Wind, Smartphone, Sofa, Bed, Utensils, Monitor, Layers, Bookmark, Megaphone, Info } from 'lucide-react';
+import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType } from './firebase';
+import { Item, Notification } from './types';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export const CategoryIcon = ({ iconName, size = 16, className = "" }: { iconName: string, size?: number, className?: string }) => {
   const icons: Record<string, any> = {
@@ -35,6 +40,19 @@ const Navbar = () => {
   const { cart } = useCart();
   const [isOpen, setIsOpen] = React.useState(false);
   const [expandedGroups, setExpandedGroups] = React.useState<string[]>([]);
+  const [notifications, setNotifications] = React.useState<Notification[]>([]);
+
+  React.useEffect(() => {
+    const q = query(
+      collection(db, 'notifications'), 
+      where('active', '==', true),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+    return onSnapshot(q, (snap) => {
+      setNotifications(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+    }, error => handleFirestoreError(error, OperationType.LIST, 'notifications'));
+  }, []);
 
   const toggleGroup = (id: string) => {
     setExpandedGroups(prev => 
@@ -85,33 +103,45 @@ const Navbar = () => {
             {user ? (
               <>
                 <div className="relative group">
-                  <button className="text-gray-600 hover:text-blue-900 p-2 rounded-full hover:bg-gray-50 transition-all">
-                    <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
+                  <button className="text-gray-600 hover:text-blue-900 p-2 rounded-full hover:bg-gray-50 transition-all relative">
+                    {notifications.length > 0 && (
+                      <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
+                    )}
                     <Bell size={24} />
                   </button>
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                    <h4 className="font-bold text-blue-900 mb-3 text-sm flex items-center gap-2">
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-gray-100 p-6 opacity-0 translate-y-2 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all z-50">
+                    <h4 className="font-black text-blue-900 mb-4 text-xs uppercase tracking-widest flex items-center gap-2">
                        <Bell size={16} className="text-yellow-500" /> Notifications
                     </h4>
                     <div className="space-y-3">
-                      <div className="text-xs p-3 bg-blue-50 rounded-xl text-blue-800 border border-blue-100 group/notif">
-                        <div className="flex items-start gap-2">
-                          <span className="mt-0.5">🔥</span>
-                          <div>
-                            <p className="font-bold">Promotion de Pâques !</p>
-                            <p className="opacity-80">Jusqu'à -15% sur tous les réfrigérateurs LG cette semaine.</p>
+                      {notifications.map(notif => (
+                        <div key={notif.id} className={cn(
+                          "text-xs p-4 rounded-2xl border shadow-sm transition-all hover:scale-[1.02]",
+                          notif.type === 'offer' ? "bg-orange-50 text-orange-800 border-orange-100" :
+                          notif.type === 'alert' ? "bg-red-50 text-red-800 border-red-100" :
+                          "bg-blue-50 text-blue-800 border-blue-100"
+                        )}>
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5">
+                              {notif.type === 'offer' ? <Megaphone size={14} /> : 
+                               notif.type === 'alert' ? <AlertCircle size={14} /> : <Info size={14} />}
+                            </div>
+                            <div>
+                              <p className="font-black uppercase tracking-tight mb-1">{notif.title}</p>
+                              <p className="opacity-80 leading-relaxed">{notif.message}</p>
+                              <p className="mt-2 text-[8px] font-bold opacity-40 uppercase tracking-widest">
+                                {format(notif.createdAt.toDate(), 'd MMM yyyy', { locale: fr })}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="text-xs p-3 bg-red-50 rounded-xl text-red-800 border border-red-100">
-                        <div className="flex items-start gap-2">
-                          <span className="mt-0.5">⚠️</span>
-                          <div>
-                            <p className="font-bold">Retard de paiement</p>
-                            <p className="opacity-80">Votre mensualité du 15 Avril est en attente. Merci de régulariser.</p>
-                          </div>
+                      ))}
+                      {notifications.length === 0 && (
+                        <div className="py-8 text-center">
+                          <Bell size={24} className="mx-auto text-gray-200 mb-2" />
+                          <p className="text-xs text-gray-400 font-bold uppercase tracking-widest px-8">Aucune nouvelle notification</p>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </div>

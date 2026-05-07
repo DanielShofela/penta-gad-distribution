@@ -61,21 +61,24 @@ const ClientDashboard = () => {
     };
   }, [user]);
 
+  const [confirmingCancel, setConfirmingCancel] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+
   const cancelOrder = async (orderId: string) => {
-    if (!window.confirm("Voulez-vous vraiment annuler cette commande ?")) return;
     try {
       await updateDoc(doc(db, 'orders', orderId), { status: 'cancelled' });
       toast.success("Commande annulée avec succès");
+      setConfirmingCancel(null);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
     }
   };
 
   const deleteOrder = async (orderId: string) => {
-    if (!window.confirm("Voulez-vous vraiment supprimer cette commande ? Cette action est irréversible.")) return;
     try {
       await deleteDoc(doc(db, 'orders', orderId));
       toast.success("Commande supprimée");
+      setConfirmingDelete(null);
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `orders/${orderId}`);
     }
@@ -188,23 +191,59 @@ const ClientDashboard = () => {
                     
                     <div className="flex gap-2">
                       {(order.status === 'pending' || order.status === 'confirmed') && (
-                        <button 
-                          onClick={() => cancelOrder(order.id)}
-                          className="flex items-center gap-1 text-xs font-bold text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors border border-red-100"
-                        >
-                          <XCircle size={14} />
-                          Annuler
-                        </button>
+                        confirmingCancel === order.id ? (
+                          <div className="flex items-center gap-2 bg-red-50 p-1 rounded-lg">
+                            <span className="text-[10px] font-bold text-red-600 px-2 italic">Annuler ?</span>
+                            <button 
+                              onClick={() => cancelOrder(order.id)}
+                              className="text-[10px] font-black uppercase bg-red-600 text-white px-2 py-1 rounded-md"
+                            >
+                              Oui
+                            </button>
+                            <button 
+                              onClick={() => setConfirmingCancel(null)}
+                              className="text-[10px] font-black uppercase bg-gray-200 text-gray-600 px-2 py-1 rounded-md"
+                            >
+                              Non
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => setConfirmingCancel(order.id)}
+                            className="flex items-center gap-1 text-xs font-bold text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors border border-red-100"
+                          >
+                            <XCircle size={14} />
+                            Annuler
+                          </button>
+                        )
                       )}
                       
                       {order.status === 'cancelled' && (
-                        <button 
-                          onClick={() => deleteOrder(order.id)}
-                          className="flex items-center gap-1 text-xs font-bold text-gray-500 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors border border-gray-100"
-                        >
-                          <Trash2 size={14} />
-                          Supprimer
-                        </button>
+                        confirmingDelete === order.id ? (
+                          <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+                            <span className="text-[10px] font-bold text-gray-600 px-2 italic">Supprimer ?</span>
+                            <button 
+                              onClick={() => deleteOrder(order.id)}
+                              className="text-[10px] font-black uppercase bg-gray-600 text-white px-2 py-1 rounded-md"
+                            >
+                              Oui
+                            </button>
+                            <button 
+                              onClick={() => setConfirmingDelete(null)}
+                              className="text-[10px] font-black uppercase bg-gray-200 text-gray-600 px-2 py-1 rounded-md"
+                            >
+                              Non
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => setConfirmingDelete(order.id)}
+                            className="flex items-center gap-1 text-xs font-bold text-gray-500 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors border border-gray-100"
+                          >
+                            <Trash2 size={14} />
+                            Supprimer
+                          </button>
+                        )
                       )}
                     </div>
                   </div>

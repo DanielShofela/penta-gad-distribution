@@ -103,3 +103,14 @@ export interface Settings {
   faviconUrl?: string;
   siteName?: string;
 }
+
+export type NotificationType = 'offer' | 'info' | 'alert';
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  createdAt: Timestamp;
+  active: boolean;
+}

@@ -5,7 +5,7 @@ import { collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, doc, order
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Item, Order, PaymentPlan, UserProfile, Payment } from '../types';
 import { CATEGORY_GROUPS } from '../constants';
-import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Plus, Trash2, Edit2, CheckCircle, Clock, AlertCircle, ChevronRight, Search, TrendingUp, DollarSign, PackageCheck, Settings as SettingsIcon, Eye, Mail, Phone, MapPin, X, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Plus, Trash2, Edit2, CheckCircle, Clock, AlertCircle, ChevronRight, Search, TrendingUp, DollarSign, PackageCheck, Settings as SettingsIcon, Eye, Mail, Phone, MapPin, X, ShieldCheck, Bell, Megaphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -34,6 +34,7 @@ const AdminDashboard = () => {
     { to: "/admin/orders", icon: ShoppingCart, label: "Commandes" },
     { to: "/admin/payments", icon: CreditCard, label: "Paiements" },
     { to: "/admin/users", icon: Users, label: "Utilisateurs" },
+    { to: "/admin/notifications", icon: Bell, label: "Notifications" },
     { to: "/admin/settings", icon: SettingsIcon, label: "Paramètres" },
   ];
 
@@ -73,6 +74,7 @@ const AdminDashboard = () => {
             <Route path="orders" element={<AdminOrders />} />
             <Route path="payments" element={<AdminPayments />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="notifications" element={<AdminNotifications />} />
             <Route path="settings" element={<AdminSettings />} />
           </Routes>
         </main>
@@ -877,6 +879,162 @@ const AdminUsers = () => {
           </div>
         )}
       </AnimatePresence>
+    </div>
+  );
+};
+
+const AdminNotifications = () => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isAdding, setIsAdding] = useState(false);
+
+  useEffect(() => {
+    const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snap) => {
+      setNotifications(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+    }, error => handleFirestoreError(error, OperationType.LIST, 'notifications'));
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        title: formData.get('title') as string,
+        message: formData.get('message') as string,
+        type: formData.get('type') as string,
+        active: true,
+        createdAt: Timestamp.now()
+      });
+      toast.success("Notification publiée !");
+      setIsAdding(false);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'notifications');
+    }
+  };
+
+  const toggleActive = async (id: string, current: boolean) => {
+    try {
+      await updateDoc(doc(db, 'notifications', id), { active: !current });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `notifications/${id}`);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Supprimer cette notification ?")) return;
+    try {
+      await deleteDoc(doc(db, 'notifications', id));
+      toast.success("Notification supprimée");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `notifications/${id}`);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center text-blue-900 border-b border-gray-100 pb-4">
+        <h2 className="text-2xl font-black uppercase tracking-tight">System Notifications</h2>
+        <button 
+          onClick={() => setIsAdding(!isAdding)}
+          className="flex items-center gap-2 bg-blue-900 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-xl shadow-blue-900/20"
+        >
+          {isAdding ? <X size={18} /> : <Plus size={18} />}
+          {isAdding ? 'Annuler' : 'Nouvelle Notification'}
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {isAdding && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl"
+          >
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1 mx-2">Titre du Message</label>
+                  <input name="title" required className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-blue-900 font-bold text-blue-900" placeholder="ex: Promotion de Pâques !" />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1 mx-2">Type</label>
+                  <select name="type" className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-blue-900 font-bold text-blue-900">
+                    <option value="offer">Offre / Promo</option>
+                    <option value="info">Information</option>
+                    <option value="alert">Alerte</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1 mx-2">Message</label>
+                <textarea name="message" required rows={3} className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-blue-900 text-blue-900" placeholder="Décrivez l'offre ou l'annonce importante ici..."></textarea>
+              </div>
+              <div className="flex justify-end">
+                <button type="submit" className="bg-yellow-400 text-blue-900 px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-yellow-500 shadow-lg shadow-yellow-400/20">
+                  Publier Maintenant
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="grid gap-4">
+        {notifications.map(notif => (
+          <div key={notif.id} className={cn(
+            "bg-white rounded-3xl p-6 border transition-all flex items-start gap-4",
+            notif.active ? "border-gray-100 opacity-100" : "border-gray-50 opacity-60 grayscale"
+          )}>
+            <div className={cn(
+              "p-3 rounded-2xl",
+              notif.type === 'offer' ? "bg-orange-100 text-orange-600" :
+              notif.type === 'alert' ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"
+            )}>
+              {notif.type === 'offer' ? <Megaphone size={24} /> : 
+               notif.type === 'alert' ? <AlertCircle size={24} /> : <Bell size={24} />}
+            </div>
+            <div className="flex-grow">
+              <div className="flex items-center gap-2 mb-1">
+                <h4 className="font-black text-blue-900 uppercase tracking-tight">{notif.title}</h4>
+                <span className={cn(
+                  "text-[8px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full",
+                  notif.active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                )}>
+                  {notif.active ? 'Actif' : 'Masqué'}
+                </span>
+              </div>
+              <p className="text-gray-500 text-sm leading-relaxed mb-2">{notif.message}</p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase">{format(notif.createdAt.toDate(), 'Pp', { locale: fr })}</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button 
+                onClick={() => toggleActive(notif.id, notif.active)}
+                className={cn(
+                  "p-2 rounded-xl border transition-all",
+                  notif.active ? "text-gray-400 border-gray-100 hover:bg-gray-50" : "text-green-600 border-green-100 bg-green-50"
+                )}
+                title={notif.active ? "Masquer" : "Réactiver"}
+              >
+                <Eye size={18} />
+              </button>
+              <button 
+                onClick={() => handleDelete(notif.id)}
+                className="p-2 text-red-500 rounded-xl border border-red-500/10 hover:bg-red-50 transition-all"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {notifications.length === 0 && (
+          <div className="text-center py-20 bg-gray-50 rounded-[40px] border-2 border-dashed border-gray-200">
+             <Bell size={48} className="mx-auto text-gray-200 mb-4" />
+             <p className="text-gray-400 font-bold uppercase tracking-widest text-sm">Aucune notification publiée</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
