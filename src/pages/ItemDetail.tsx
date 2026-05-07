@@ -584,7 +584,7 @@ const ItemDetail = () => {
               </button>
             </div>
 
-            <div className="flex flex-col gap-1 mb-8">
+            <div className="flex flex-col gap-1 mb-6">
               <span className="text-3xl font-black text-blue-900">{formatCurrency(item.price)}</span>
               {item.allowInstallments && (
                 <span className="text-sm font-bold text-blue-600">
@@ -593,15 +593,43 @@ const ItemDetail = () => {
               )}
             </div>
 
-            {/* Availability Badge */}
-            <div className="mb-8">
+            {/* Direct Order Button */}
+            {!isAdmin && (
+              <button 
+                onClick={() => {
+                  addToCart(item, quantity);
+                  navigate('/checkout');
+                }}
+                disabled={item.stock <= 0}
+                className="w-full bg-yellow-400 text-blue-900 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] hover:bg-yellow-500 transition-all flex items-center justify-center gap-3 shadow-xl shadow-yellow-400/20 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none mb-8"
+              >
+                <CheckCircle size={20} />
+                Passer la commande maintenant
+              </button>
+            )}
+
+            {/* Availability Badge & Order Action */}
+            <div className="mb-8 flex flex-wrap items-center gap-4">
               <span className={cn(
-                "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2 shadow-sm",
+                "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2 shadow-sm whitespace-nowrap",
                 item.stock > 0 ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"
               )}>
                 <div className={cn("w-2 h-2 rounded-full", item.stock > 0 ? "bg-green-500" : "bg-red-500")}></div>
                 {item.stock > 0 ? `${item.stock} unitées disponibles` : "Rupture de stock"}
               </span>
+
+              {!isAdmin && item.stock > 0 && (
+                <button 
+                  onClick={() => {
+                    addToCart(item, quantity);
+                    navigate('/checkout');
+                  }}
+                  className="bg-blue-900 text-white px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-[0.1em] hover:bg-blue-800 transition-all flex items-center gap-2 shadow-lg shadow-blue-900/10"
+                >
+                  <ShoppingCart size={14} />
+                  Commander
+                </button>
+              )}
             </div>
           </div>
 
