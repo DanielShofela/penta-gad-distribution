@@ -158,7 +158,7 @@ const ItemDetail = () => {
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<'specs' | 'desc' | 'reviews'>('desc');
+  const [activeTab, setActiveTab] = useState<'specs' | 'desc' | 'reviews' | 'configs'>('desc');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -447,6 +447,7 @@ const ItemDetail = () => {
               {[
                 { id: 'desc', label: 'DESCRIPTION' },
                 { id: 'specs', label: 'SPECIFICATIONS' },
+                { id: 'configs', label: 'CONFIGURATIONS' },
                 { id: 'reviews', label: 'AVIS CLIENT' }
               ].map(tab => (
                 <button
@@ -471,6 +472,11 @@ const ItemDetail = () => {
                 {activeTab === 'specs' && (
                   <motion.div key="specs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <FormattedAttributes content={item.specifications} emptyMessage="Aucune spécification technique détaillée." />
+                  </motion.div>
+                )}
+                {activeTab === 'configs' && (
+                  <motion.div key="configs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <FormattedAttributes content={item.configurations} emptyMessage="Aucune option de configuration disponible pour cet article." />
                   </motion.div>
                 )}
                 {activeTab === 'reviews' && (
@@ -683,6 +689,7 @@ const ItemDetail = () => {
           {/* Mobile Tabs */}
           <div className="lg:hidden mb-8 space-y-4">
             {[
+              { id: 'configs', label: 'CONFIGURATIONS / OPTIONS' },
               { id: 'specs', label: 'SPECIFICATIONS TECHNIQUES' },
               { id: 'desc', label: 'DESCRIPTION' },
               { id: 'reviews', label: 'AVIS CLIENT' }
@@ -707,6 +714,7 @@ const ItemDetail = () => {
                       <div className="px-6 py-4 text-sm text-gray-500 leading-relaxed whitespace-pre-line">
                         {tab.id === 'desc' && (item.fullDescription || item.description)}
                         {tab.id === 'specs' && <FormattedAttributes content={item.specifications} emptyMessage="N/A" />}
+                        {tab.id === 'configs' && <FormattedAttributes content={item.configurations} emptyMessage="N/A" />}
                         {tab.id === 'reviews' && (
                           <div className="p-4 space-y-8">
                             {/* Review Stats */}
