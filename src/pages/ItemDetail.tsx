@@ -367,6 +367,15 @@ const ItemDetail = () => {
                     </div>
                   </div>
                 )}
+                <div className="flex items-center gap-2 pt-1 border-t border-gray-100/50">
+                   <div className="flex bg-blue-400/10 p-1 rounded-lg">
+                    <Bookmark size={14} className="text-blue-600 fill-blue-600" />
+                  </div>
+                  <div className="flex flex-col leading-none">
+                    <span className="font-black text-blue-900 text-sm tracking-tight">{item.favoriteCount || 0}</span>
+                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Enregistré</span>
+                  </div>
+                </div>
               </div>
             </motion.div>
 

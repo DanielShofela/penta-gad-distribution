@@ -4,9 +4,9 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { CartProvider, useCart } from './CartContext';
 import { FavoritesProvider } from './FavoritesContext';
 import { Toaster } from 'sonner';
-import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell, Snowflake, Flame, Coffee, Droplets, Wind, Smartphone, Sofa, Bed, Utensils, Monitor, Layers, Bookmark } from 'lucide-react';
+import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell, Snowflake, Flame, Coffee, Droplets, Wind, Smartphone, Sofa, Bed, Utensils, Monitor, Layers, Bookmark, Store, Tv, CookingPot, Shirt, Apple, Sparkles, Baby, Bird, MoreHorizontal } from 'lucide-react';
 
-const CategoryIcon = ({ iconName, size = 16, className = "" }: { iconName: string, size?: number, className?: string }) => {
+export const CategoryIcon = ({ iconName, size = 16, className = "" }: { iconName: string, size?: number, className?: string }) => {
   const icons: Record<string, any> = {
     Snowflake,
     Flame,
@@ -18,7 +18,17 @@ const CategoryIcon = ({ iconName, size = 16, className = "" }: { iconName: strin
     Bed,
     Utensils,
     Monitor,
-    Layers
+    Layers,
+    Store,
+    Tv,
+    CookingPot,
+    Home: HomeIcon,
+    Shirt,
+    Apple,
+    Sparkles,
+    Baby,
+    Bird,
+    MoreHorizontal
   };
   
   const IconComponent = icons[iconName] || Grid;
@@ -55,65 +65,6 @@ const Navbar = () => {
                 {isOpen ? <X size={28} /> : <Menu size={28} />}
               </button>
             </div>
-            {/* Desktop Catalogue Menu */}
-            <div className="hidden md:block relative group">
-              <button className="flex items-center gap-1 text-gray-600 hover:text-blue-900 font-medium py-2">
-                Catalogue <ChevronDown size={16} />
-              </button>
-              <div className="absolute left-0 mt-0 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform translate-y-2 group-hover:translate-y-0 overflow-y-auto max-h-[80vh]">
-                <div className="space-y-1">
-                  {CATEGORY_GROUPS.map((group) => {
-                    const isExpanded = expandedGroups.includes(group.id);
-                    return (
-                      <div key={group.id} className="border-b border-gray-50 last:border-0">
-                        <button 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toggleGroup(group.id);
-                          }}
-                          className="flex items-center justify-between w-full py-2.5 hover:bg-gray-50 rounded-lg transition-colors px-3"
-                        >
-                          <div className="flex items-center gap-2 pr-2 overflow-hidden">
-                            <CategoryIcon iconName={group.icon} className="text-blue-900/50 flex-shrink-0" />
-                            <h4 className="font-bold text-blue-900 text-[10px] uppercase tracking-widest text-left leading-tight truncate">{group.name}</h4>
-                          </div>
-                          <ChevronDown size={14} className={cn("text-gray-400 transition-transform flex-shrink-0", isExpanded && "rotate-180")} />
-                        </button>
-                        <AnimatePresence>
-                          {isExpanded && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="overflow-hidden"
-                            >
-                              <div className="flex flex-col gap-1 pl-6 pt-1 pb-3">
-                                {group.categories.map((cat) => (
-                                  <Link 
-                                    key={cat.id} 
-                                    to={`/?category=${cat.id}`} 
-                                    className="text-xs text-gray-500 py-1.5 hover:text-blue-900 block border-l border-gray-100 pl-3 hover:border-blue-900 transition-colors"
-                                  >
-                                    {cat.name}
-                                  </Link>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <Link to="/" className="text-xs font-bold text-blue-900 hover:text-yellow-600 flex items-center justify-center gap-2 group/all">
-                    Tout le catalogue <ChevronRight size={14} className="group-hover/all:translate-x-1 transition-transform" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-
             <Link to="/" className="flex items-center gap-2">
               {settings?.logoUrl ? (
                 <img src={settings.logoUrl} alt="Logo" className="h-10 w-auto object-contain" referrerPolicy="no-referrer" />

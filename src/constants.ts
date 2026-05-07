@@ -1,129 +1,128 @@
 export const CATEGORY_GROUPS = [
   {
-    id: 'froid',
-    name: 'FROID & CONSERVATION',
-    description: 'Gardez vos aliments et boissons toujours frais',
-    icon: 'Snowflake',
+    id: 'boutiques',
+    name: 'Boutiques Officielles',
+    description: 'Les plus grandes marques',
+    icon: 'Store',
     categories: [
-      { id: 'refrigerateurs', name: 'Réfrigérateurs' },
-      { id: 'congelateurs', name: 'Congélateurs' },
-      { id: 'vitrines', name: 'Vitrines réfrigérées' },
+      { id: 'lg', name: 'LG' },
+      { id: 'samsung', name: 'Samsung' },
+      { id: 'miele', name: 'Miele' },
     ]
   },
   {
-    id: 'cuisson',
-    name: 'CUISSON & CUISINE',
-    description: 'Équipez votre cuisine efficacement',
-    icon: 'Flame',
-    categories: [
-      { id: 'gazinieres', name: 'Gazinières / Cuisinières' },
-      { id: 'fours', name: 'Fours' },
-      { id: 'micro-ondes', name: 'Micro-ondes' },
-      { id: 'plaques', name: 'Plaques de cuisson' },
-      { id: 'cuiseurs', name: 'Friteuses / Rice cookers' },
-    ]
-  },
-  {
-    id: 'petit-electro',
-    name: 'PETIT ÉLECTROMÉNAGER',
-    description: 'Les indispensables du quotidien',
-    icon: 'Coffee',
-    categories: [
-      { id: 'mixeurs', name: 'Mixeurs / Blenders' },
-      { id: 'bouilloires', name: 'Bouilloires' },
-      { id: 'cafetieres', name: 'Cafetières' },
-      { id: 'fers', name: 'Fers à repasser' },
-    ]
-  },
-  {
-    id: 'lavage',
-    name: 'LAVAGE & ENTRETIEN',
-    description: 'Simplifiez vos tâches ménagères',
-    icon: 'Droplets',
-    categories: [
-      { id: 'machines-laver', name: 'Machines à laver' },
-      { id: 'aspirateurs', name: 'Aspirateurs' },
-      { id: 'nettoyeurs', name: 'Nettoyeurs' },
-    ]
-  },
-  {
-    id: 'climatisation',
-    name: 'CLIMATISATION & CONFORT',
-    description: 'Restez au frais et à l’aise',
-    icon: 'Wind',
-    categories: [
-      { id: 'climatiseurs', name: 'Climatiseurs' },
-      { id: 'ventilateurs', name: 'Ventilateurs' },
-    ]
-  },
-  {
-    id: 'hightech',
-    name: 'HIGH-TECH & BUREAUTIQUE',
-    description: 'Travail, études et divertissement',
+    id: 'telephones',
+    name: 'Téléphones & Tablettes',
+    description: 'Smartphones and accessories',
     icon: 'Smartphone',
     categories: [
-      { id: 'televisions', name: 'Télévisions' },
-      { id: 'smartphones', name: 'Smartphones (iPhone & Android)' },
+      { id: 'smartphones', name: 'Smartphones' },
       { id: 'tablettes', name: 'Tablettes' },
-      { id: 'ordinateurs', name: 'Ordinateurs' },
-      { id: 'imprimantes', name: 'Imprimantes' },
+      { id: 'accessoires-tel', name: 'Accessoires' },
     ]
   },
   {
-    id: 'salon',
-    name: 'SALON & SÉJOUR',
-    description: 'Confort et accueil',
-    icon: 'Sofa',
+    id: 'tv-electronique',
+    name: 'TV & Electronique',
+    description: 'Divertissement à domicile',
+    icon: 'Tv',
     categories: [
-      { id: 'canapes', name: 'Canapés' },
-      { id: 'fauteuils', name: 'Fauteuils' },
-      { id: 'tables-basses', name: 'Tables basses' },
-      { id: 'meubles-tv', name: 'Meubles TV' },
+      { id: 'televisions', name: 'Télévisions' },
+      { id: 'son', name: 'Systèmes de son' },
+      { id: 'home-cinema', name: 'Home Cinéma' },
     ]
   },
   {
-    id: 'chambre',
-    name: 'CHAMBRE',
-    description: 'Repos et organisation',
-    icon: 'Bed',
+    id: 'electromenager',
+    name: 'Électroménager',
+    description: 'Pour toute la maison',
+    icon: 'CookingPot',
     categories: [
-      { id: 'lits', name: 'Lits' },
-      { id: 'matelas', name: 'Matelas' },
-      { id: 'armoires', name: 'Armoires' },
-      { id: 'commodes', name: 'Commodes' },
+      { id: 'refrigerateurs', name: 'Réfrigérateurs' },
+      { id: 'cuisson', name: 'Cuisson' },
+      { id: 'lavage', name: 'Lavage' },
     ]
   },
   {
-    id: 'salle-a-manger',
-    name: 'SALLE À MANGER',
-    description: 'Moments en famille',
-    icon: 'Utensils',
+    id: 'maison-bureau',
+    name: 'Maison et bureau',
+    description: 'Mobilier et décoration',
+    icon: 'Home',
     categories: [
-      { id: 'tables-manger', name: 'Tables à manger' },
-      { id: 'chaises', name: 'Chaises' },
-      { id: 'buffets', name: 'Buffets' },
+      { id: 'salon', name: 'Salon' },
+      { id: 'bureau', name: 'Bureau' },
+      { id: 'chambre', name: 'Chambre' },
     ]
   },
   {
-    id: 'bureau',
-    name: 'BUREAU & TRAVAIL',
-    description: 'Productivité',
+    id: 'informatique',
+    name: 'Informatique',
+    description: 'Ordinateurs et périphériques',
     icon: 'Monitor',
     categories: [
-      { id: 'bureaux', name: 'Bureaux' },
-      { id: 'chaises-bureau', name: 'Chaises de bureau' },
-      { id: 'rangements-bureau', name: 'Rangements' },
+      { id: 'ordinateurs', name: 'Ordinateurs' },
+      { id: 'imprimantes', name: 'Imprimantes' },
+      { id: 'accessoires-pc', name: 'Accessoires PC' },
     ]
   },
   {
-    id: 'rangement',
-    name: 'RANGEMENT & ORGANISATION',
-    description: 'Optimisez vos espaces',
-    icon: 'Layers',
+    id: 'mode',
+    name: 'Mode',
+    description: 'Vêtements et accessoires',
+    icon: 'Shirt',
     categories: [
-      { id: 'placards', name: 'Placards' },
-      { id: 'etageres', name: 'Étagères' },
-      { id: 'meubles-multi', name: 'Meubles multifonctions' },
+      { id: 'homme', name: 'Homme' },
+      { id: 'femme', name: 'Femme' },
+      { id: 'enfant', name: 'Enfant' },
+    ]
+  },
+  {
+    id: 'supermarche',
+    name: 'Supermarché',
+    description: 'Alimentation et boissons',
+    icon: 'Apple',
+    categories: [
+      { id: 'boissons', name: 'Boissons' },
+      { id: 'epicerie', name: 'Épicerie' },
+    ]
+  },
+  {
+    id: 'beaute',
+    name: 'Beauté & Hygiène',
+    description: 'Soins et parfums',
+    icon: 'Sparkles',
+    categories: [
+      { id: 'soins', name: 'Soins du corps' },
+      { id: 'hygiene', name: 'Hygiène' },
+    ]
+  },
+  {
+    id: 'bebe',
+    name: 'Produits pour bébés',
+    description: 'Tout pour bébé',
+    icon: 'Baby',
+    categories: [
+      { id: 'puericulture', name: 'Puériculture' },
+      { id: 'jouets-bebe', name: 'Jouets' },
+    ]
+  },
+  {
+    id: 'agriculture',
+    name: 'Agriculture & Élevage',
+    description: 'Matériel agricole',
+    icon: 'Bird',
+    categories: [
+      { id: 'elevage', name: 'Élevage' },
+      { id: 'culture', name: 'Culture' },
+    ]
+  },
+  {
+    id: 'autres',
+    name: 'Autres catégories',
+    description: 'Plus d\'articles',
+    icon: 'MoreHorizontal',
+    categories: [
+      { id: 'divers', name: 'Divers' },
     ]
   }
 ];

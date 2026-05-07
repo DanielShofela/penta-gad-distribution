@@ -11,6 +11,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { formatCurrency, cn } from '../lib/utils';
 import { getCategoryName, CATEGORY_GROUPS } from '../constants';
+import { CategoryIcon } from '../App';
 
 const Home = () => {
   const [items, setItems] = useState<Item[]>([]);
@@ -212,6 +213,11 @@ const Home = () => {
             </div>
             
             <div className="flex items-center gap-2">
+               <div className="flex items-center gap-1 bg-blue-50 px-1.5 py-0.5 rounded-md border border-blue-100/50">
+                <Bookmark size={10} fill="#2563eb" className="text-blue-600" />
+                <span className="text-[10px] font-black text-blue-700">{item.favoriteCount || 0}</span>
+              </div>
+              
               <span className={cn(
                 "text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md shadow-sm border transition-colors",
                 item.reviewCount && item.reviewCount > 0 
@@ -260,42 +266,66 @@ const Home = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Hero Section (Only show on main landing) */}
+      {/* Hero & Sidebar Section (Only show on main landing) */}
       {!categoryFilter && searchTerm === '' && (
-        <div className="relative rounded-3xl overflow-hidden mb-12 bg-blue-900 h-[300px] sm:h-[400px] flex items-center">
-          <div className="absolute inset-0 opacity-40">
-            <img 
-              src="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80&w=1920" 
-              alt="Luxury Kitchen" 
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
+        <div className="flex flex-col lg:flex-row gap-8 mb-12">
+          {/* Desktop Sidebar */}
+          <div className="hidden lg:block w-72 flex-shrink-0">
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden h-full">
+              <div className="p-4 space-y-1">
+                {CATEGORY_GROUPS.map((group) => (
+                  <Link
+                    key={group.id}
+                    to={`/?category=${group.categories[0].id}`}
+                    className="flex items-center justify-between w-full p-2.5 hover:bg-sky-50 rounded-xl transition-all group/item"
+                  >
+                    <div className="flex items-center gap-3">
+                      <CategoryIcon iconName={group.icon} className="text-gray-500 group-hover/item:text-blue-900 transition-colors" size={20} />
+                      <span className="text-sm font-medium text-gray-700 group-hover/item:text-blue-900 transition-colors">{group.name}</span>
+                    </div>
+                    <ChevronRight size={14} className="text-gray-300 group-hover/item:text-blue-900 group-hover/item:translate-x-0.5 transition-all" />
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="relative z-10 px-6 md:px-16 max-w-2xl">
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-3xl md:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight"
-            >
-              L'Excellence dans votre <span className="text-yellow-500 italic">Maison</span>
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-blue-100 text-sm sm:text-lg mb-6 sm:mb-8 max-w-md"
-            >
-              Électroménager, Mobilier et High-Tech de luxe avec options de financement flexibles.
-            </motion.p>
-            <motion.button 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              onClick={() => document.getElementById('articles-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="bg-yellow-500 text-blue-900 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-bold hover:bg-yellow-400 transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-yellow-500/20 text-sm sm:text-base"
-            >
-              Explorer les Nouveautés <ChevronRight size={20} />
-            </motion.button>
+
+          {/* Hero Carousel/Banner */}
+          <div className="relative flex-1 rounded-3xl overflow-hidden bg-blue-900 h-[300px] sm:h-[400px] lg:h-auto flex items-center min-h-[400px]">
+            <div className="absolute inset-0 opacity-40">
+              <img 
+                src="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80&w=1920" 
+                alt="Luxury Kitchen" 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            <div className="relative z-10 px-6 md:px-16 max-w-2xl">
+              <motion.h1 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-3xl md:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight"
+              >
+                L'Excellence dans votre <span className="text-yellow-500 italic">Maison</span>
+              </motion.h1>
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-blue-100 text-sm sm:text-lg mb-6 sm:mb-8 max-w-md"
+              >
+                Électroménager, Mobilier et High-Tech de luxe avec options de financement flexibles.
+              </motion.p>
+              <motion.button 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                onClick={() => document.getElementById('articles-section')?.scrollIntoView({ behavior: 'smooth' })}
+                className="bg-yellow-500 text-blue-900 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-bold hover:bg-yellow-400 transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-yellow-500/20 text-sm sm:text-base"
+              >
+                Explorer les Nouveautés <ChevronRight size={20} />
+              </motion.button>
+            </div>
           </div>
         </div>
       )}
