@@ -6,7 +6,7 @@ import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
 import { useFavorites } from '../FavoritesContext';
 import { ShoppingCart, Plus, Search, Filter, ChevronRight, Package, ArrowLeft, Star, Bookmark, RefreshCcw, Grid } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { formatCurrency, cn } from '../lib/utils';
@@ -24,6 +24,7 @@ const Home = () => {
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const categoryFilter = queryParams.get('category');
+  const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, 'items'));
@@ -273,26 +274,110 @@ const Home = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Hero & Sidebar Section (Only show on main landing) */}
       {!categoryFilter && searchTerm === '' && (
-        <div className="flex flex-col lg:flex-row gap-8 mb-12">
+        <div className="relative flex flex-col lg:flex-row gap-8 mb-12">
           {/* Desktop Sidebar */}
-          <div className="hidden lg:block w-72 flex-shrink-0">
+          <div 
+            className="hidden lg:block w-72 flex-shrink-0 relative z-20"
+            onMouseLeave={() => setHoveredGroup(null)}
+          >
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden h-full">
               <div className="p-4 space-y-1">
                 {CATEGORY_GROUPS.map((group) => (
-                  <Link
+                  <div
                     key={group.id}
-                    to={`/?category=${group.categories[0].id}`}
-                    className="flex items-center justify-between w-full p-2.5 hover:bg-sky-50 rounded-xl transition-all group/item"
+                    onMouseEnter={() => setHoveredGroup(group.id)}
+                    className="relative"
                   >
-                    <div className="flex items-center gap-3">
-                      <CategoryIcon iconName={group.icon} className="text-gray-500 group-hover/item:text-blue-900 transition-colors" size={20} />
-                      <span className="text-sm font-medium text-gray-700 group-hover/item:text-blue-900 transition-colors">{group.name}</span>
-                    </div>
-                    <ChevronRight size={14} className="text-gray-300 group-hover/item:text-blue-900 group-hover/item:translate-x-0.5 transition-all" />
-                  </Link>
+                    <Link
+                      to={`/?category=${group.categories[0].id}`}
+                      className={cn(
+                        "flex items-center justify-between w-full p-2.5 rounded-xl transition-all group/item",
+                        hoveredGroup === group.id ? "bg-sky-50 text-blue-900" : "hover:bg-sky-50"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <CategoryIcon 
+                          iconName={group.icon} 
+                          className={cn(
+                            "transition-colors",
+                            hoveredGroup === group.id ? "text-blue-900" : "text-gray-500 group-hover/item:text-blue-900"
+                          )} 
+                          size={20} 
+                        />
+                        <span className={cn(
+                          "text-sm font-medium transition-colors",
+                          hoveredGroup === group.id ? "text-blue-900" : "text-gray-700 group-hover/item:text-blue-900"
+                        )}>
+                          {group.name}
+                        </span>
+                      </div>
+                      <ChevronRight 
+                        size={14} 
+                        className={cn(
+                          "transition-all",
+                          hoveredGroup === group.id ? "text-blue-900 translate-x-0.5" : "text-gray-300 group-hover/item:text-blue-900 group-hover/item:translate-x-0.5"
+                        )} 
+                      />
+                    </Link>
+                  </div>
                 ))}
               </div>
             </div>
+
+            {/* Mega Menu Overlay */}
+            <AnimatePresence>
+              {hoveredGroup && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="absolute left-full top-0 ml-4 w-[600px] h-full bg-white/95 backdrop-blur-md rounded-[2rem] border border-gray-100 shadow-2xl z-30 p-8 overflow-y-auto"
+                >
+                  {CATEGORY_GROUPS.find(g => g.id === hoveredGroup) && (
+                    <div className="grid grid-cols-2 gap-8">
+                      {/* Sub-categories column */}
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="text-xs font-black text-blue-900 uppercase tracking-[0.2em] mb-4 border-b border-blue-50 pb-2">
+                            Catégories secondaires
+                          </h3>
+                          <div className="grid gap-2">
+                            {CATEGORY_GROUPS.find(g => g.id === hoveredGroup)?.categories.map(cat => (
+                              <Link 
+                                key={cat.id}
+                                to={`/?category=${cat.id}`}
+                                className="text-sm font-medium text-gray-500 hover:text-blue-600 flex items-center gap-2 group/sub"
+                              >
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-100 group-hover/sub:bg-blue-600 transition-colors" />
+                                {cat.name}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Info/Promo column */}
+                      <div className="bg-blue-50/50 rounded-2xl p-6 flex flex-col justify-between">
+                         <div>
+                            <h4 className="font-black text-blue-900 text-sm mb-2 uppercase tracking-tight">
+                              {CATEGORY_GROUPS.find(g => g.id === hoveredGroup)?.name}
+                            </h4>
+                            <p className="text-xs text-gray-500 leading-relaxed italic">
+                              {CATEGORY_GROUPS.find(g => g.id === hoveredGroup)?.description}
+                            </p>
+                         </div>
+                         <div className="mt-8">
+                            <div className="bg-blue-900 text-white p-4 rounded-xl shadow-lg">
+                               <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Offre spéciale</p>
+                               <p className="font-bold text-sm leading-tight">-10% sur votre première commande avec le code <span className="text-yellow-400">BIENVENUE</span></p>
+                            </div>
+                         </div>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Hero Carousel/Banner */}
