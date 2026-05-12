@@ -150,11 +150,17 @@ const Navbar = () => {
 
                 <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
                   <Link to="/account" className="relative group">
-                    <img 
-                      src={profile?.photoURL} 
-                      alt="Account" 
-                      className="w-10 h-10 rounded-full border-2 border-transparent group-hover:border-blue-900 transition-all object-cover shadow-sm"
-                    />
+                    {profile?.photoURL ? (
+                      <img 
+                        src={profile.photoURL} 
+                        alt="Account" 
+                        className="w-10 h-10 rounded-full border-2 border-transparent group-hover:border-blue-900 transition-all object-cover shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center text-white font-bold border-2 border-transparent group-hover:border-blue-900 transition-all shadow-sm">
+                        {profile?.displayName?.charAt(0).toUpperCase() || profile?.email?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                    )}
                   </Link>
                   <div className="hidden lg:block text-right">
                     <p className="text-xs font-bold text-blue-900 leading-tight">{profile?.displayName?.split(' ')[0]}</p>
@@ -276,7 +282,13 @@ const Navbar = () => {
                   {user ? (
                     <div className="space-y-6">
                       <Link to="/account" onClick={() => setIsOpen(false)} className="flex items-center gap-3 p-3 bg-blue-50 rounded-2xl border border-blue-100">
-                        <img src={profile?.photoURL} alt="" className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" />
+                        {profile?.photoURL ? (
+                          <img src={profile.photoURL} alt="" className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center text-white font-bold border-2 border-white shadow-sm">
+                            {profile?.displayName?.charAt(0).toUpperCase() || 'U'}
+                          </div>
+                        )}
                         <div>
                           <p className="font-bold text-blue-900 text-sm">{profile?.displayName}</p>
                           <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Mon Compte</p>

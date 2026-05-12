@@ -437,9 +437,15 @@ const TontineDashboard = () => {
                           m.userId === user?.uid ? "bg-blue-50 border-blue-100 shadow-sm scale-105" : "bg-white border-gray-100 hover:border-blue-200"
                         )}>
                            <div className="relative">
-                              <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-blue-900 font-bold text-lg">
-                                 {m.userName.charAt(0)}
-                              </div>
+                              {m.userId === user?.uid && profile?.photoURL ? (
+                                <img src={profile.photoURL} alt="" className="w-10 h-10 rounded-xl object-cover shadow-sm border border-blue-100" />
+                              ) : m.userPhotoURL ? (
+                                <img src={m.userPhotoURL} alt="" className="w-10 h-10 rounded-xl object-cover shadow-sm border border-gray-100" />
+                              ) : (
+                                <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-blue-900 font-bold text-lg">
+                                   {m.userName.charAt(0)}
+                                </div>
+                              )}
                               <div className={cn(
                                 "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-[8px] font-black text-white",
                                 m.rank === group.currentCycle ? "bg-yellow-400" : "bg-blue-900"

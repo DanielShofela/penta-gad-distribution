@@ -3,7 +3,7 @@ import { Routes, Route, Link, useLocation, useNavigate, useSearchParams } from '
 import { useAuth } from '../AuthContext';
 import { collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, doc, orderBy, Timestamp, where, getDocs, setDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { Item, Order, PaymentPlan, UserProfile, Payment, TontineGroup, TontineMember } from '../types';
+import { Item, Order, PaymentPlan, UserProfile, Payment, TontineGroup, TontineMember, UserRole } from '../types';
 import { CATEGORY_GROUPS } from '../constants';
 import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Plus, Trash2, Edit2, CheckCircle, Clock, AlertCircle, ChevronRight, Search, TrendingUp, DollarSign, PackageCheck, Settings as SettingsIcon, Eye, Mail, Phone, MapPin, X, ShieldCheck, Bell, Megaphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -622,6 +622,7 @@ const AdminOrders = () => {
 const AdminPayments = () => {
   const [plans, setPlans] = useState<PaymentPlan[]>([]);
   const [isAddingPayment, setIsAddingPayment] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, 'paymentPlans'), orderBy('status', 'asc'));
@@ -777,8 +778,14 @@ const AdminUsers = () => {
               <tr key={user.uid} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full border border-gray-100 object-cover" />
-                    <span className="font-bold text-blue-900">{user.displayName}</span>
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full border border-gray-100 object-cover" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-900 font-bold text-[10px] border border-blue-200">
+                        {user.displayName?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                    )}
+                    <span className="font-bold text-blue-900">{user.displayName || 'Utilisateur Anonyme'}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-gray-500 text-sm">{user.email}</td>
@@ -824,11 +831,17 @@ const AdminUsers = () => {
               <div className="bg-blue-900 p-8 text-white">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-6">
-                    <img 
-                      src={selectedUser.photoURL} 
-                      alt="" 
-                      className="w-20 h-20 rounded-2xl border-2 border-white/20 shadow-lg object-cover" 
-                    />
+                    {selectedUser.photoURL ? (
+                      <img 
+                        src={selectedUser.photoURL} 
+                        alt="" 
+                        className="w-20 h-20 rounded-2xl border-2 border-white/20 shadow-lg object-cover" 
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl bg-white/10 border-2 border-white/20 shadow-lg flex items-center justify-center text-3xl font-bold">
+                        {selectedUser.displayName?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                    )}
                     <div>
                       <h3 className="text-2xl font-bold">{selectedUser.displayName}</h3>
                       <p className="text-blue-200">{selectedUser.email}</p>

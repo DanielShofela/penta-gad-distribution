@@ -35,7 +35,7 @@ export const tontineService = {
   },
 
   // Join or create a tontine group for a product
-  async joinTontine(userId: string, userName: string, product: Item) {
+  async joinTontine(userId: string, userName: string, product: Item, userPhotoURL?: string) {
     try {
       return await runTransaction(db, async (transaction) => {
         // 1. Check if user is already in a waiting or active group for this product to prevent duplicates
@@ -119,6 +119,7 @@ export const tontineService = {
           groupId: groupId,
           userId: userId,
           userName: userName,
+          userPhotoURL: userPhotoURL,
           rank: groupData.currentMembers,
           hasReceivedProduct: false,
           totalPaid: 0,

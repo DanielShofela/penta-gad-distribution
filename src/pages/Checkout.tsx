@@ -137,7 +137,8 @@ const Checkout = () => {
           const { groupId } = await tontineService.joinTontine(
             user.uid, 
             profile?.displayName || 'Utilisateur', 
-            tontineProduct as Item
+            tontineProduct as Item,
+            profile?.photoURL
           );
           
           // Optionally update order with tontine reference

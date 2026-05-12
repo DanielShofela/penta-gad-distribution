@@ -137,6 +137,7 @@ export interface TontineMember {
   groupId: string;
   userId: string;
   userName: string;
+  userPhotoURL?: string;
   rank: number;
   hasReceivedProduct: boolean;
   totalPaid: number;

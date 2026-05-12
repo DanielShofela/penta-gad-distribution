@@ -164,7 +164,7 @@ const ItemDetail = () => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   
   const { addToCart } = useCart();
-  const { user, isAdmin, settings } = useAuth();
+  const { user, profile, isAdmin, settings } = useAuth();
   const { toggleFavorite: toggleFavContext, isFavorite: checkFavorite } = useFavorites();
   const navigate = useNavigate();
 
@@ -525,8 +525,12 @@ const ItemDetail = () => {
                           <div key={review.id} className="border-b border-gray-50 pb-6 last:border-0 group">
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-900 border border-blue-100">
-                                  <User size={20} />
+                                <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-900 border border-blue-100 overflow-hidden">
+                                  {review.userId && user?.uid === review.userId && profile?.photoURL ? (
+                                    <img src={profile.photoURL} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <User size={20} />
+                                  )}
                                 </div>
                                 <div>
                                   <h4 className="font-black text-sm text-blue-900">{review.userName}</h4>
@@ -768,8 +772,12 @@ const ItemDetail = () => {
                                   <div key={review.id} className="bg-white p-4 rounded-xl border border-gray-100">
                                     <div className="flex items-center justify-between mb-2">
                                       <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-900 border border-blue-100">
-                                          <User size={16} />
+                                        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-900 border border-blue-100 overflow-hidden">
+                                          {review.userId && user?.uid === review.userId && profile?.photoURL ? (
+                                            <img src={profile.photoURL} alt="" className="w-full h-full object-cover" />
+                                          ) : (
+                                            <User size={16} />
+                                          )}
                                         </div>
                                         <div>
                                           <h4 className="font-black text-[11px] text-blue-900 leading-tight">{review.userName}</h4>
