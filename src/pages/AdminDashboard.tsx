@@ -544,6 +544,7 @@ const AdminItems = () => {
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
@@ -553,11 +554,14 @@ const AdminOrders = () => {
   }, []);
 
   const updateStatus = async (id: string, status: string) => {
+    setIsSaving(true);
     try {
       await updateDoc(doc(db, 'orders', id), { status });
       toast.success("Statut mis à jour");
     } catch (error) {
       toast.error("Erreur");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -586,17 +590,21 @@ const AdminOrders = () => {
                      order.paymentType === 'tontine' ? 'TONTINE' : 'ÉCHELONNÉ'}
                   </p>
                 </div>
-                <select 
-                  value={order.status || 'pending'}
-                  onChange={(e) => updateStatus(order.id, e.target.value)}
-                  className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 text-sm font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-900"
-                >
-                  <option value="pending">En attente</option>
-                  <option value="confirmed">Confirmée</option>
-                  <option value="shipped">Expédiée</option>
-                  <option value="delivered">Livrée</option>
-                  <option value="cancelled">Annulée</option>
-                </select>
+                <div className="flex items-center gap-2">
+                  <select 
+                    value={order.status || 'pending'}
+                    onChange={(e) => updateStatus(order.id, e.target.value)}
+                    disabled={isSaving}
+                    className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 text-sm font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-900 disabled:opacity-50"
+                  >
+                    <option value="pending">En attente</option>
+                    <option value="confirmed">Confirmée</option>
+                    <option value="shipped">Expédiée</option>
+                    <option value="delivered">Livrée</option>
+                    <option value="cancelled">Annulée</option>
+                  </select>
+                  {isSaving && <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-900"></div>}
+                </div>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -623,6 +631,8 @@ const AdminPayments = () => {
   }, []);
 
   const handleAddPayment = async (plan: PaymentPlan, amount: number) => {
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       await addDoc(collection(db, 'payments'), {
         paymentPlanId: plan.id,
@@ -641,7 +651,9 @@ const AdminPayments = () => {
       toast.success("Versement enregistré");
       setIsAddingPayment(null);
     } catch (error) {
-      toast.error("Erreur");
+      toast.error("Erreur lors de l'enregistrement");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -723,6 +735,7 @@ const AdminPayments = () => {
 const AdminUsers = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, 'users'), orderBy('role'));
@@ -730,6 +743,21 @@ const AdminUsers = () => {
       setUsers(snap.docs.map(doc => ({ ...doc.data() } as UserProfile)));
     });
   }, []);
+
+  const handleUpdateRole = async (userId: string, newRole: UserRole) => {
+    setIsSaving(true);
+    try {
+      await updateDoc(doc(db, 'users', userId), { role: newRole });
+      toast.success(`Rôle mis à jour : ${newRole}`);
+      if (selectedUser?.uid === userId) {
+        setSelectedUser(prev => prev ? { ...prev, role: newRole } : null);
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `users/${userId}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -839,15 +867,34 @@ const AdminUsers = () => {
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2">Adresse de Livraison</h4>
-                    <div className="flex items-start gap-3 text-sm">
-                      <div className="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-700 mt-1">
-                        <MapPin size={16} />
-                      </div>
-                      <p className="text-gray-600 leading-relaxed">
-                        {selectedUser.address || 'Aucune adresse enregistrée.'}
-                      </p>
+                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2">Gestion Rôle & Accès</h4>
+                    <div className="flex items-center gap-4">
+                      <select 
+                        value={selectedUser.role}
+                        onChange={(e) => handleUpdateRole(selectedUser.uid, e.target.value as UserRole)}
+                        disabled={isSaving}
+                        className="flex-grow p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-900 bg-gray-50 font-bold text-blue-900"
+                      >
+                        <option value="client">Client</option>
+                        <option value="admin">Administrateur</option>
+                      </select>
+                      {isSaving && <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-900"></div>}
                     </div>
+                    <p className="text-[10px] text-gray-400 italic">
+                      Attention: Donner le rôle administrateur permet d'accéder à toutes les données sensibles.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4">
+                  <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2">Adresse de Livraison</h4>
+                  <div className="flex items-start gap-3 text-sm">
+                    <div className="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-700 mt-1">
+                      <MapPin size={16} />
+                    </div>
+                    <p className="text-gray-600 leading-relaxed">
+                      {selectedUser.address || 'Aucune adresse enregistrée.'}
+                    </p>
                   </div>
                 </div>
 
@@ -900,6 +947,7 @@ const AdminUsers = () => {
 const AdminNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'));
@@ -910,6 +958,8 @@ const AdminNotifications = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
     const formData = new FormData(e.currentTarget);
     try {
       await addDoc(collection(db, 'notifications'), {
@@ -923,6 +973,8 @@ const AdminNotifications = () => {
       setIsAdding(false);
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'notifications');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -985,8 +1037,12 @@ const AdminNotifications = () => {
                 <textarea name="message" required rows={3} className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-blue-900 text-blue-900" placeholder="Décrivez l'offre ou l'annonce importante ici..."></textarea>
               </div>
               <div className="flex justify-end">
-                <button type="submit" className="bg-yellow-400 text-blue-900 px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-yellow-500 shadow-lg shadow-yellow-400/20">
-                  Publier Maintenant
+                <button 
+                  type="submit" 
+                  disabled={isSaving}
+                  className="bg-yellow-400 text-blue-900 px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-yellow-500 shadow-lg shadow-yellow-400/20 disabled:opacity-50"
+                >
+                  {isSaving ? "Publication en cours..." : "Publier Maintenant"}
                 </button>
               </div>
             </form>
@@ -1286,6 +1342,7 @@ const AdminTontines = () => {
     const [selectedGroup, setSelectedGroup] = useState<TontineGroup | null>(null);
     const [groupMembers, setGroupMembers] = useState<TontineMember[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         const q = query(collection(db, 'tontine_groups'), orderBy('createdAt', 'desc'));
@@ -1307,20 +1364,28 @@ const AdminTontines = () => {
     }, [selectedGroup]);
 
     const handleCycleChange = async (groupId: string, newCycle: number) => {
+        if (isSaving) return;
+        setIsSaving(true);
         try {
             await updateDoc(doc(db, 'tontine_groups', groupId), { currentCycle: newCycle });
             toast.success("Cycle mis à jour");
         } catch (error) {
             toast.error("Erreur");
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const handleMarkReceived = async (memberId: string, received: boolean) => {
+        if (isSaving) return;
+        setIsSaving(true);
         try {
             await updateDoc(doc(db, 'tontine_members', memberId), { hasReceivedProduct: received });
             toast.success("Statut réception mis à jour");
         } catch (error) {
             toast.error("Erreur");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -1461,12 +1526,13 @@ const AdminTontines = () => {
                                                         <td className="py-4">
                                                             <button 
                                                                 onClick={() => handleMarkReceived(m.id, !m.hasReceivedProduct)}
+                                                                disabled={isSaving}
                                                                 className={cn(
-                                                                    "flex items-center gap-1 px-3 py-1 rounded-full text-[8px] font-black uppercase transition-all",
+                                                                    "flex items-center gap-1 px-3 py-1 rounded-full text-[8px] font-black uppercase transition-all disabled:opacity-50",
                                                                     m.hasReceivedProduct ? "bg-yellow-400 text-blue-900 shadow-md" : "bg-gray-100 text-gray-400 hover:bg-yellow-100 hover:text-yellow-700"
                                                                 )}
                                                             >
-                                                                {m.hasReceivedProduct ? <CheckCircle size={10} /> : <Clock size={10} />}
+                                                                {isSaving ? <div className="animate-spin rounded-full h-2 w-2 border-t-2 border-blue-900"></div> : (m.hasReceivedProduct ? <CheckCircle size={10} /> : <Clock size={10} />)}
                                                                 {m.hasReceivedProduct ? "Livré" : "Marquer Livré"}
                                                             </button>
                                                         </td>
