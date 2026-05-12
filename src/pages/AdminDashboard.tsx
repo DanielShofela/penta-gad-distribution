@@ -1354,8 +1354,10 @@ const AdminTontines = () => {
     const [groups, setGroups] = useState<TontineGroup[]>([]);
     const [selectedGroup, setSelectedGroup] = useState<TontineGroup | null>(null);
     const [groupMembers, setGroupMembers] = useState<TontineMember[]>([]);
+    const [tontineEnabledItems, setTontineEnabledItems] = useState<Item[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [activeView, setActiveView] = useState<'groups' | 'articles'>('groups');
 
     useEffect(() => {
         const q = query(collection(db, 'tontine_groups'), orderBy('createdAt', 'desc'));
@@ -1363,6 +1365,13 @@ const AdminTontines = () => {
             setGroups(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TontineGroup)));
             setLoading(false);
         }, (error) => handleFirestoreError(error, OperationType.LIST, 'tontine_groups'));
+    }, []);
+
+    useEffect(() => {
+        const q = query(collection(db, 'items'), where('allowTontine', '==', true));
+        return onSnapshot(q, (snap) => {
+            setTontineEnabledItems(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Item)));
+        });
     }, []);
 
     useEffect(() => {
@@ -1406,165 +1415,235 @@ const AdminTontines = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-black text-blue-900 uppercase italic tracking-tight">Gestion des Tontines</h2>
-                <div className="bg-blue-50 text-blue-900 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest">
-                    {groups.length} Groupes Actifs
+                <div className="flex items-center gap-4">
+                  <div className="flex bg-gray-100 p-1 rounded-xl">
+                    <button 
+                      onClick={() => setActiveView('groups')}
+                      className={cn(
+                        "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                        activeView === 'groups' ? "bg-white text-blue-900 shadow-sm" : "text-gray-400 hover:text-blue-900"
+                      )}
+                    >
+                      Groupes ({groups.length})
+                    </button>
+                    <button 
+                      onClick={() => setActiveView('articles')}
+                      className={cn(
+                        "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                        activeView === 'articles' ? "bg-white text-blue-900 shadow-sm" : "text-gray-400 hover:text-blue-900"
+                      )}
+                    >
+                      Articles ({tontineEnabledItems.length})
+                    </button>
+                  </div>
+                  <div className="bg-blue-50 text-blue-900 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest">
+                      {groups.length} Groupes Actifs
+                  </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                {/* Groups List */}
-                <div className="xl:col-span-1 space-y-4">
-                    {groups.map(group => (
-                        <div 
-                            key={group.id} 
-                            onClick={() => setSelectedGroup(group)}
-                            className={cn(
-                                "p-4 rounded-3xl border transition-all cursor-pointer group",
-                                selectedGroup?.id === group.id ? "bg-blue-900 border-blue-900 shadow-xl scale-[1.02]" : "bg-white border-gray-100 hover:border-blue-200"
-                            )}
-                        >
-                            <div className="flex items-start gap-4">
-                                <div className="w-16 h-16 bg-gray-50 rounded-2xl overflow-hidden p-2 flex-shrink-0">
-                                    <img src={group.productImage} className="w-full h-full object-contain" alt="" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h4 className={cn(
-                                        "font-black text-sm uppercase italic truncate",
-                                        selectedGroup?.id === group.id ? "text-white" : "text-blue-900"
-                                    )}>
-                                        {group.productName}
-                                    </h4>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className={cn(
-                                            "text-[8px] font-black uppercase px-2 py-0.5 rounded-full",
-                                            group.status === 'active' ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                                        )}>
-                                            {group.status}
-                                        </span>
-                                        <span className={cn(
-                                            "text-[10px] font-bold",
-                                            selectedGroup?.id === group.id ? "text-blue-200" : "text-gray-400"
-                                        )}>
-                                            {group.currentMembers}/{group.totalMembers} Membres
-                                        </span>
-                                    </div>
-                                    <div className={cn(
-                                        "mt-3 h-1 rounded-full overflow-hidden",
-                                        selectedGroup?.id === group.id ? "bg-white/10" : "bg-gray-100"
-                                    )}>
-                                        <div 
-                                            className="h-full bg-yellow-400" 
-                                            style={{ width: `${(group.currentMembers / group.totalMembers) * 100}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Group Details */}
-                <div className="xl:col-span-2">
-                    <AnimatePresence mode="wait">
-                        {selectedGroup ? (
-                            <motion.div 
-                                key={selectedGroup.id}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm sticky top-24"
+            <AnimatePresence mode="wait">
+              {activeView === 'groups' ? (
+                <motion.div 
+                  key="groups-view"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  className="grid grid-cols-1 xl:grid-cols-3 gap-8"
+                >
+                    {/* Groups List */}
+                    <div className="xl:col-span-1 space-y-4">
+                        {groups.map(group => (
+                            <div 
+                                key={group.id} 
+                                onClick={() => setSelectedGroup(group)}
+                                className={cn(
+                                    "p-4 rounded-3xl border transition-all cursor-pointer group",
+                                    selectedGroup?.id === group.id ? "bg-blue-900 border-blue-900 shadow-xl scale-[1.02]" : "bg-white border-gray-100 hover:border-blue-200"
+                                )}
                             >
-                                <div className="flex justify-between items-start mb-8">
-                                    <div>
-                                        <h3 className="text-xl font-black text-blue-900 uppercase italic leading-none">{selectedGroup.productName}</h3>
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-2">DÉTAILS DU GROUPE / ID: {selectedGroup.id.slice(0, 8)}</p>
+                                <div className="flex items-start gap-4">
+                                    <div className="w-16 h-16 bg-gray-50 rounded-2xl overflow-hidden p-2 flex-shrink-0">
+                                        <img src={group.productImage} className="w-full h-full object-contain" alt="" />
                                     </div>
-                                    <div className="flex gap-2">
-                                        <div className="text-right">
-                                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Cycle Actuel</p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <button 
-                                                    onClick={() => handleCycleChange(selectedGroup.id, Math.max(1, selectedGroup.currentCycle - 1))}
-                                                    className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center text-blue-900 hover:bg-gray-100"
-                                                >
-                                                    -
-                                                </button>
-                                                <span className="font-black text-xl italic text-blue-900 min-w-[2ch] text-center">#{selectedGroup.currentCycle}</span>
-                                                <button 
-                                                    onClick={() => handleCycleChange(selectedGroup.id, Math.min(selectedGroup.totalMembers, selectedGroup.currentCycle + 1))}
-                                                    className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center text-blue-900 hover:bg-gray-100"
-                                                >
-                                                    +
-                                                </button>
-                                            </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className={cn(
+                                            "font-black text-sm uppercase italic truncate",
+                                            selectedGroup?.id === group.id ? "text-white" : "text-blue-900"
+                                        )}>
+                                            {group.productName}
+                                        </h4>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className={cn(
+                                                "text-[8px] font-black uppercase px-2 py-0.5 rounded-full",
+                                                group.status === 'active' ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                                            )}>
+                                                {group.status}
+                                            </span>
+                                            <span className={cn(
+                                                "text-[10px] font-bold",
+                                                selectedGroup?.id === group.id ? "text-blue-200" : "text-gray-400"
+                                            )}>
+                                                {group.currentMembers}/{group.totalMembers} Membres
+                                            </span>
+                                        </div>
+                                        <div className={cn(
+                                            "mt-3 h-1 rounded-full overflow-hidden",
+                                            selectedGroup?.id === group.id ? "bg-white/10" : "bg-gray-100"
+                                        )}>
+                                            <div 
+                                                className="h-full bg-yellow-400" 
+                                                style={{ width: `${(group.currentMembers / group.totalMembers) * 100}%` }}
+                                            />
                                         </div>
                                     </div>
                                 </div>
-
-                                <div className="space-y-4">
-                                    <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2 flex items-center gap-2">
-                                        <Users size={12} /> Liste des Participants
-                                    </h5>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="text-[10px] font-black text-gray-400 uppercase tracking-tighter text-left">
-                                                    <th className="py-2">Rank</th>
-                                                    <th className="py-2">Membre</th>
-                                                    <th className="py-2">Payé</th>
-                                                    <th className="py-2">Reste</th>
-                                                    <th className="py-2">Statut</th>
-                                                    <th className="py-2">Réception</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-50">
-                                                {groupMembers.map(m => (
-                                                    <tr key={m.id} className="text-xs">
-                                                        <td className="py-4 font-black">#{m.rank}</td>
-                                                        <td className="py-4">
-                                                            <div className="flex flex-col">
-                                                                <span className="font-bold text-blue-900">{m.userName}</span>
-                                                                <span className="text-[10px] text-gray-400">ID: {m.userId.slice(0, 6)}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="py-4 font-black text-blue-900">{formatCurrency(m.totalPaid)}</td>
-                                                        <td className="py-4 font-black text-red-500">{formatCurrency(m.remainingAmount)}</td>
-                                                        <td className="py-4">
-                                                            <span className={cn(
-                                                                "px-2 py-0.5 rounded-full text-[8px] font-black uppercase",
-                                                                m.status === 'active' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                                                            )}>
-                                                                {m.status}
-                                                            </span>
-                                                        </td>
-                                                        <td className="py-4">
-                                                            <button 
-                                                                onClick={() => handleMarkReceived(m.id, !m.hasReceivedProduct)}
-                                                                disabled={isSaving}
-                                                                className={cn(
-                                                                    "flex items-center gap-1 px-3 py-1 rounded-full text-[8px] font-black uppercase transition-all disabled:opacity-50",
-                                                                    m.hasReceivedProduct ? "bg-yellow-400 text-blue-900 shadow-md" : "bg-gray-100 text-gray-400 hover:bg-yellow-100 hover:text-yellow-700"
-                                                                )}
-                                                            >
-                                                                {isSaving ? <div className="animate-spin rounded-full h-2 w-2 border-t-2 border-blue-900"></div> : (m.hasReceivedProduct ? <CheckCircle size={10} /> : <Clock size={10} />)}
-                                                                {m.hasReceivedProduct ? "Livré" : "Marquer Livré"}
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center p-20 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-100">
-                                <Search size={48} className="text-gray-200 mb-4" />
-                                <p className="text-gray-400 font-bold uppercase tracking-widest text-sm">Sélectionnez un groupe pour voir les détails</p>
                             </div>
+                        ))}
+                        {groups.length === 0 && (
+                          <div className="py-20 text-center bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-100 italic text-gray-400 text-sm">
+                            Aucun groupe actif pour le moment.
+                          </div>
                         )}
-                    </AnimatePresence>
-                </div>
-            </div>
+                    </div>
+
+                    {/* Group Details */}
+                    <div className="xl:col-span-2">
+                        <AnimatePresence mode="wait">
+                            {selectedGroup ? (
+                                <motion.div 
+                                    key={selectedGroup.id}
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm sticky top-24"
+                                >
+                                    <div className="flex justify-between items-start mb-8">
+                                        <div>
+                                            <h3 className="text-xl font-black text-blue-900 uppercase italic leading-none">{selectedGroup.productName}</h3>
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-2">DÉTAILS DU GROUPE / ID: {selectedGroup.id.slice(0, 8)}</p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <div className="text-right">
+                                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Cycle Actuel</p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <button 
+                                                        onClick={() => handleCycleChange(selectedGroup.id, Math.max(1, selectedGroup.currentCycle - 1))}
+                                                        className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center text-blue-900 hover:bg-gray-100"
+                                                    >
+                                                        -
+                                                    </button>
+                                                    <span className="font-black text-xl italic text-blue-900 min-w-[2ch] text-center">#{selectedGroup.currentCycle}</span>
+                                                    <button 
+                                                        onClick={() => handleCycleChange(selectedGroup.id, Math.min(selectedGroup.totalMembers, selectedGroup.currentCycle + 1))}
+                                                        className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center text-blue-900 hover:bg-gray-100"
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2 flex items-center gap-2">
+                                            <Users size={12} /> Liste des Participants
+                                        </h5>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full">
+                                                <thead>
+                                                    <tr className="text-[10px] font-black text-gray-400 uppercase tracking-tighter text-left">
+                                                        <th className="py-2">Rank</th>
+                                                        <th className="py-2">Membre</th>
+                                                        <th className="py-2">Payé</th>
+                                                        <th className="py-2">Reste</th>
+                                                        <th className="py-2">Statut</th>
+                                                        <th className="py-2">Réception</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-50">
+                                                    {groupMembers.map(m => (
+                                                        <tr key={m.id} className="text-xs">
+                                                            <td className="py-4 font-black">#{m.rank}</td>
+                                                            <td className="py-4">
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold text-blue-900">{m.userName}</span>
+                                                                    <span className="text-[10px] text-gray-400">ID: {m.userId.slice(0, 6)}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-4 font-black text-blue-900">{formatCurrency(m.totalPaid)}</td>
+                                                            <td className="py-4 font-black text-red-500">{formatCurrency(m.remainingAmount)}</td>
+                                                            <td className="py-4">
+                                                                <span className={cn(
+                                                                    "px-2 py-0.5 rounded-full text-[8px] font-black uppercase",
+                                                                    m.status === 'active' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                                                                )}>
+                                                                    {m.status}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-4">
+                                                                <button 
+                                                                    onClick={() => handleMarkReceived(m.id, !m.hasReceivedProduct)}
+                                                                    disabled={isSaving}
+                                                                    className={cn(
+                                                                        "flex items-center gap-1 px-3 py-1 rounded-full text-[8px] font-black uppercase transition-all disabled:opacity-50",
+                                                                        m.hasReceivedProduct ? "bg-yellow-400 text-blue-900 shadow-md" : "bg-gray-100 text-gray-400 hover:bg-yellow-100 hover:text-yellow-700"
+                                                                    )}
+                                                                >
+                                                                    {isSaving ? <div className="animate-spin rounded-full h-2 w-2 border-t-2 border-blue-900"></div> : (m.hasReceivedProduct ? <CheckCircle size={10} /> : <Clock size={10} />)}
+                                                                    {m.hasReceivedProduct ? "Livré" : "Marquer Livré"}
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center p-20 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-100">
+                                    <Search size={48} className="text-gray-200 mb-4" />
+                                    <p className="text-gray-400 font-bold uppercase tracking-widest text-sm">Sélectionnez un groupe pour voir les détails</p>
+                                </div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </motion.div>
+              ) : (
+                <motion.div 
+                   key="articles-view"
+                   initial={{ opacity: 0, scale: 0.98 }}
+                   animate={{ opacity: 1, scale: 1 }}
+                   exit={{ opacity: 0, scale: 0.98 }}
+                   className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                >
+                   {tontineEnabledItems.map(item => (
+                     <div key={item.id} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm relative group hover:border-blue-900/20 transition-all">
+                        <Link to={`/admin/items?edit=${item.id}`} className="absolute top-4 right-4 p-2 bg-gray-50 rounded-xl text-blue-900 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <Edit2 size={16} />
+                        </Link>
+                        <img src={item.imageUrls?.[0] || item.imageUrl} className="w-full aspect-square object-contain mb-4 rounded-2xl bg-gray-50" alt="" />
+                        <h4 className="font-bold text-blue-900 truncate">{item.name}</h4>
+                        <p className="text-xs text-gray-400 mb-4">{formatCurrency(item.price)}</p>
+                        <div className="flex items-center justify-between border-t border-gray-50 pt-4">
+                           <div>
+                              <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Tontine / Jour</p>
+                              <p className="text-xs font-black text-blue-900">{formatCurrency(Math.round(item.price * 0.01))}</p>
+                           </div>
+                           <span className="bg-blue-100 text-blue-700 text-[8px] font-black uppercase px-2 py-1 rounded-full">Actif</span>
+                        </div>
+                     </div>
+                   ))}
+                   {tontineEnabledItems.length === 0 && (
+                     <div className="col-span-full py-20 text-center bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-100">
+                        <PackageCheck size={48} className="mx-auto text-gray-200 mb-4" />
+                        <p className="text-gray-400 font-bold uppercase tracking-widest text-sm">Aucun article enregistré avec l'option tontine.</p>
+                        <Link to="/admin/items" className="text-blue-900 font-bold text-sm mt-4 inline-block hover:underline">Aller au catalogue</Link>
+                     </div>
+                   )}
+                </motion.div>
+              )}
+            </AnimatePresence>
         </div>
     );
 };

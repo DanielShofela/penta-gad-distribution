@@ -129,28 +129,27 @@ const Checkout = () => {
           handleFirestoreError(error, OperationType.CREATE, 'paymentPlans');
         }
       } else if (paymentType === 'tontine' && orderRef) {
-        // Tontine Intelligent System Integration
-        // Note: For now we handle tontine for the first item if multiple exist.
-        // Usually tontine is restricted to 1 item per group.
-        const tontineProduct = cart[0]; 
+        // Tontine Intelligent System Integration for each item in the cart
+        const tontineGroupIds: string[] = [];
         try {
-          const { groupId } = await tontineService.joinTontine(
-            user.uid, 
-            profile?.displayName || 'Utilisateur', 
-            tontineProduct as Item,
-            profile?.photoURL
-          );
+          for (const item of cart) {
+            const { groupId } = await tontineService.joinTontine(
+              user.uid, 
+              profile?.displayName || 'Utilisateur', 
+              item as Item,
+              profile?.photoURL
+            );
+            tontineGroupIds.push(groupId);
+          }
           
-          // Optionally update order with tontine reference
+          // Update order with all tontine references
           await updateDoc(doc(db, 'orders', orderRef.id), {
-            tontineGroupId: groupId
+            tontineGroupIds: tontineGroupIds
           });
           
-          toast.success("Vous avez rejoint un groupe de tontine !");
+          toast.success("Vous avez rejoint des groupes de tontine pour vos articles !");
         } catch (error: any) {
           toast.error(error.message || "Erreur lors de l'adhésion à la tontine");
-          // Revert order if tontine joining failed? 
-          // For now just allow the order but warn.
         }
       }
 

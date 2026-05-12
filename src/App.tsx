@@ -87,6 +87,17 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-6">
+            {!isAdmin && (
+              <div className="flex items-center gap-4 border-r border-gray-100 pr-6 mr-4">
+                <Link to="/tontine-dashboard" className="flex items-center gap-2 text-blue-600 font-black italic text-xs uppercase tracking-tighter hover:text-blue-800 transition-all group">
+                   <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-900 group-hover:bg-blue-100 transition-colors">
+                      <TrendingUp size={18} />
+                   </div>
+                   Mon Espace Tontine
+                </Link>
+              </div>
+            )}
+
             <Link to="/favorites" className="text-gray-600 hover:text-blue-500 p-2 rounded-full hover:bg-gray-50 transition-all">
               <Bookmark size={24} />
             </Link>
