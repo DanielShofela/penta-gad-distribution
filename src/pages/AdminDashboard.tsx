@@ -1191,21 +1191,95 @@ const PaymentList = ({ planId }: { planId: string }) => {
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'payments'));
   }, [planId]);
 
-  if (loading) return <div className="animate-pulse h-10 bg-gray-50 rounded-xl"></div>;
+  const handleDeletePayment = async (payment: Payment) => {
+    if (!window.confirm(`Supprimer ce versement de ${formatCurrency(payment.amount)} ?`)) return;
+
+    try {
+      // 1. Delete payment document
+      await deleteDoc(doc(db, 'payments', payment.id));
+
+      // 2. Update the parent plan's remaining amount
+      const planRef = doc(db, 'paymentPlans', planId);
+      const planSnap = await getDocs(query(collection(db, 'paymentPlans'), where('id', '==', planId)));
+      // Note: we might need to fetch the plan data first to be safe, but planId is passed prop.
+      // Better to use a direct doc get:
+      // const planDoc = await getDoc(planRef); // wait, getDoc is not imported?
+      // I see getDocs being used. I'll use the planId directly.
+      
+      // I will use a simple update with increment if available, but I don't see increment imported.
+      // I'll just fetch the current plan and update it.
+      const planDoc = await getDocs(query(collection(db, 'paymentPlans'), where('__name__', '==', planId)));
+      if (!planDoc.empty) {
+        const planData = planDoc.docs[0].data() as PaymentPlan;
+        const newRemaining = planData.remainingAmount + payment.amount;
+        await updateDoc(planRef, {
+          remainingAmount: newRemaining,
+          status: 'active'
+        });
+      }
+
+      toast.success("Versement annulé");
+    } catch (error) {
+      toast.error("Erreur lors de l'annulation");
+    }
+  };
+
+  if (loading) return <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="animate-pulse h-12 bg-gray-50 rounded-xl"></div>)}</div>;
 
   return (
-    <div className="space-y-2">
-      {payments.map((payment) => (
-        <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl text-sm">
-          <div className="flex items-center gap-3">
-            <CheckCircle size={16} className="text-green-500" />
-            <span className="font-bold text-blue-900">{formatCurrency(payment.amount)}</span>
-            <span className="text-gray-400">{format(payment.date.toDate(), 'd MMM yyyy', { locale: fr })}</span>
-          </div>
-          <span className="text-xs font-bold text-green-600 uppercase">Effectué</span>
+    <div className="overflow-x-auto">
+      <table className="w-full text-left border-collapse">
+        <thead>
+          <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 italic">
+            <th className="pb-3 px-2">Date & Heure</th>
+            <th className="pb-3 px-2">Référence</th>
+            <th className="pb-3 px-2">Montant</th>
+            <th className="pb-3 px-2">Statut</th>
+            <th className="pb-3 px-2 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-50">
+          {payments.map((payment) => (
+            <tr key={payment.id} className="group hover:bg-gray-50/50 transition-colors">
+              <td className="py-4 px-2">
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-blue-900">{format(payment.date.toDate(), 'd MMMM yyyy', { locale: fr })}</span>
+                  <span className="text-[10px] text-gray-400 flex items-center gap-1 font-mono uppercase">
+                    <Clock size={10} /> {format(payment.date.toDate(), 'HH:mm')}
+                  </span>
+                </div>
+              </td>
+              <td className="py-4 px-2">
+                <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded">#{payment.id.slice(0, 8).toUpperCase()}</span>
+              </td>
+              <td className="py-4 px-2 text-sm font-black text-blue-900">
+                {formatCurrency(payment.amount)}
+              </td>
+              <td className="py-4 px-2">
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+                  <span className="text-[10px] font-bold text-green-600 uppercase tracking-tighter">Validé</span>
+                </div>
+              </td>
+              <td className="py-4 px-2 text-right">
+                <button 
+                  onClick={() => handleDeletePayment(payment)}
+                  className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                  title="Annuler ce versement"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {payments.length === 0 && (
+        <div className="py-8 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 mt-2">
+           <CreditCard size={24} className="mx-auto text-gray-200 mb-2" />
+           <p className="text-gray-400 text-xs italic">Aucun versement enregistré pour ce plan.</p>
         </div>
-      ))}
-      {payments.length === 0 && <p className="text-gray-400 text-sm italic">Aucun versement.</p>}
+      )}
     </div>
   );
 };
