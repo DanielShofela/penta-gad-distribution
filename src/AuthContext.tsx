@@ -31,7 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (doc.exists()) {
         setSettings(doc.data() as Settings);
       }
-    });
+    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/global'));
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);

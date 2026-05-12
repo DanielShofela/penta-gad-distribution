@@ -114,3 +114,47 @@ export interface Notification {
   createdAt: Timestamp;
   active: boolean;
 }
+
+export interface TontineGroup {
+  id: string;
+  productId: string;
+  productName: string;
+  productImage: string;
+  totalMembers: number;
+  currentMembers: number;
+  contributionAmount: number;
+  contributionFrequency: "daily" | "weekly";
+  totalCycles: number;
+  currentCycle: number;
+  startDate: Timestamp | null;
+  endDate: Timestamp | null;
+  status: "waiting" | "active" | "completed";
+  createdAt: Timestamp;
+}
+
+export interface TontineMember {
+  id: string;
+  groupId: string;
+  userId: string;
+  userName: string;
+  rank: number;
+  hasReceivedProduct: boolean;
+  totalPaid: number;
+  remainingAmount: number;
+  missedPayments: number;
+  nextPaymentDate: Timestamp | null;
+  status: "active" | "late" | "blocked";
+  joinedAt: Timestamp;
+}
+
+export interface TontinePayment {
+  id: string;
+  groupId: string;
+  memberId: string;
+  userId: string;
+  amount: number;
+  paymentMethod: string;
+  transactionId: string;
+  paymentDate: Timestamp;
+  status: "success" | "pending" | "failed";
+}

@@ -338,6 +338,7 @@ const PaymentList = ({ planId }: { planId: string }) => {
     const q = query(
       collection(db, 'payments'),
       where('paymentPlanId', '==', planId),
+      where('clientId', '==', user?.uid),
       orderBy('date', 'desc')
     );
 

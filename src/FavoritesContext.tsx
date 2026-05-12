@@ -28,7 +28,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const unsubscribe = onSnapshot(collection(db, 'users', user.uid, 'favorites'), (snap) => {
       const ids = snap.docs.map(d => d.id);
       setFavoriteIds(new Set(ids));
-    });
+    }, (error) => handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/favorites`));
 
     return () => unsubscribe();
   }, [user]);

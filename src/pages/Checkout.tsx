@@ -3,12 +3,13 @@ import { useCart } from '../CartContext';
 import { useAuth } from '../AuthContext';
 import { collection, addDoc, Timestamp, doc, updateDoc, increment } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { PaymentType, OrderStatus, Order } from '../types';
-import { CreditCard, Banknote, ShieldCheck, ChevronRight, CheckCircle, Package, ArrowLeft, User, Users } from 'lucide-react';
+import { PaymentType, OrderStatus, Order, Item } from '../types';
+import { CreditCard, Banknote, ShieldCheck, ChevronRight, CheckCircle, Package, ArrowLeft, User, Users, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { cn, formatCurrency } from '../lib/utils';
+import { tontineService } from '../services/tontineService';
 
 const Checkout = () => {
   const { cart, total, clearCart } = useCart();
@@ -111,14 +112,14 @@ const Checkout = () => {
       }
 
       // If installment or tontine, create a payment plan
-      if ((paymentType === 'installment' || paymentType === 'tontine') && orderRef) {
+      if (paymentType === 'installment' && orderRef) {
         const planData = {
           orderId: orderRef.id,
           clientId: user.uid,
           clientName: profile?.displayName || 'Client',
           totalAmount: total,
           remainingAmount: total,
-          installmentsCount: paymentType === 'tontine' ? 100 : 10,
+          installmentsCount: 10,
           status: 'active',
           type: paymentType
         };
@@ -126,6 +127,29 @@ const Checkout = () => {
           await addDoc(collection(db, 'paymentPlans'), planData);
         } catch (error) {
           handleFirestoreError(error, OperationType.CREATE, 'paymentPlans');
+        }
+      } else if (paymentType === 'tontine' && orderRef) {
+        // Tontine Intelligent System Integration
+        // Note: For now we handle tontine for the first item if multiple exist.
+        // Usually tontine is restricted to 1 item per group.
+        const tontineProduct = cart[0]; 
+        try {
+          const { groupId } = await tontineService.joinTontine(
+            user.uid, 
+            profile?.displayName || 'Utilisateur', 
+            tontineProduct as Item
+          );
+          
+          // Optionally update order with tontine reference
+          await updateDoc(doc(db, 'orders', orderRef.id), {
+            tontineGroupId: groupId
+          });
+          
+          toast.success("Vous avez rejoint un groupe de tontine !");
+        } catch (error: any) {
+          toast.error(error.message || "Erreur lors de l'adhésion à la tontine");
+          // Revert order if tontine joining failed? 
+          // For now just allow the order but warn.
         }
       }
 

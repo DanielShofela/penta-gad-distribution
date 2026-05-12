@@ -23,12 +23,18 @@ service cloud.firestore {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    function isAdmin() {
+    function isTokenAdmin() {
       return isSignedIn() && (
         request.auth.token.email == "digitalsoutien@gmail.com" || 
-        request.auth.token.email == "juniorshofela@gmail.com" ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+        request.auth.token.email == "juniorshofela@gmail.com"
+      );
+    }
+
+    function isAdmin() {
+      return isTokenAdmin() || (
+        isSignedIn() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
       );
     }
 
@@ -43,27 +49,52 @@ service cloud.firestore {
     // ===============================================================
     // Validation Blueprints
     // ===============================================================
-    function isValidReview(data) {
-      return data.keys().hasAll(['itemId', 'userName', 'rating', 'comment', 'createdAt']) &&
-             data.itemId is string && data.itemId.size() <= 128 &&
-             data.userName is string && data.userName.size() <= 100 &&
-             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
-             data.comment is string && data.comment.size() <= 2000 &&
+    
+    function isValidTontineGroup(data) {
+      return data.keys().hasAll(['productId', 'productName', 'productImage', 'totalMembers', 'currentMembers', 'contributionAmount', 'contributionFrequency', 'totalCycles', 'currentCycle', 'status', 'createdAt']) &&
+             data.productId is string && data.productId.size() <= 128 &&
+             data.productName is string && data.productName.size() <= 200 &&
+             data.productImage is string && data.productImage.size() <= 1000 &&
+             data.totalMembers is int && data.totalMembers > 0 &&
+             data.currentMembers is int && data.currentMembers >= 0 &&
+             data.contributionAmount is number && data.contributionAmount > 0 &&
+             data.contributionFrequency in ['daily', 'weekly'] &&
+             data.totalCycles is int &&
+             data.currentCycle is int &&
+             data.status in ['waiting', 'active', 'completed'] &&
              (data.createdAt == request.time || data.createdAt is timestamp);
     }
 
-    function isValidFavorite(data) {
-      return data.keys().hasAll(['addedAt']) &&
-             (data.addedAt == request.time || data.addedAt is timestamp);
+    function isValidTontineMember(data) {
+      return data.keys().hasAll(['groupId', 'userId', 'userName', 'rank', 'hasReceivedProduct', 'totalPaid', 'remainingAmount', 'status', 'joinedAt']) &&
+             data.groupId is string && data.groupId.size() <= 128 &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.userName is string && data.userName.size() <= 100 &&
+             data.rank is int && data.rank > 0 &&
+             data.hasReceivedProduct is bool &&
+             data.totalPaid is number && data.totalPaid >= 0 &&
+             data.status in ['active', 'late', 'blocked'] &&
+             (data.joinedAt == request.time || data.joinedAt is timestamp);
     }
 
-    function isValidNotification(data) {
-      return data.keys().hasAll(['title', 'message', 'type', 'createdAt', 'active']) &&
-             data.title is string && data.title.size() <= 200 &&
-             data.message is string && data.message.size() <= 1000 &&
-             data.type in ['offer', 'info', 'alert'] &&
-             (data.createdAt == request.time || data.createdAt is timestamp) &&
-             data.active is bool;
+    function isValidTontinePayment(data) {
+      return data.keys().hasAll(['groupId', 'memberId', 'userId', 'amount', 'paymentDate', 'status']) &&
+             data.groupId is string && data.groupId.size() <= 128 &&
+             data.memberId is string && data.memberId.size() <= 128 &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.amount is number && data.amount > 0 &&
+             data.status in ['success', 'pending', 'failed'] &&
+             (data.paymentDate == request.time || data.paymentDate is timestamp);
+    }
+
+    function isValidOrder(data) {
+       return data.keys().hasAll(['clientId', 'clientName', 'clientEmail', 'clientAddress', 'clientPhone', 'items', 'totalAmount', 'paymentType', 'status', 'createdAt']) &&
+              data.clientId == request.auth.uid &&
+              data.clientEmail is string &&
+              data.totalAmount is number && data.totalAmount >= 0 &&
+              data.paymentType in ['cash', 'installment', 'tontine'] &&
+              data.status is string &&
+              (data.createdAt == request.time || data.createdAt is timestamp);
     }
 
     // ===============================================================
@@ -71,14 +102,73 @@ service cloud.firestore {
     // ===============================================================
 
     match /users/{userId} {
-      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isSignedIn() && (request.auth.uid == userId || isTokenAdmin());
       allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow update: if isSignedIn() && (isAdmin() || (request.auth.uid == userId && !incoming().diff(existing()).affectedKeys().hasAny(['role'])));
       allow delete: if isAdmin();
 
-      match /favorites/{itemId} {
-        allow read: if isSignedIn() && request.auth.uid == userId;
-        allow write: if isSignedIn() && request.auth.uid == userId && isValidId(itemId) && (request.method == 'delete' || isValidFavorite(incoming()));
+      match /favorites/{favoriteId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
+    match /tontine_groups/{groupId} {
+      allow get, list: if isSignedIn();
+      allow create: if isAdmin() && isValidTontineGroup(incoming());
+      allow update: if (isAdmin() && isValidTontineGroup(incoming())) || (
+        isSignedIn() && 
+        isValidTontineGroup(incoming()) && 
+        incoming().diff(existing()).affectedKeys().hasOnly(['currentMembers', 'status']) &&
+        existing().status == 'waiting'
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /tontine_members/{memberId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.groupId != null || isTokenAdmin());
+      allow create: if isSignedIn() && isValidTontineMember(incoming()) && (
+        existsAfter(/databases/$(database)/documents/tontine_groups/$(incoming().groupId))
+      );
+      allow update: if (isAdmin() && isValidTontineMember(incoming())) || (
+        isSignedIn() && 
+        resource.data.userId == request.auth.uid && 
+        isValidTontineMember(incoming()) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['totalPaid', 'remainingAmount', 'nextPaymentDate'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /tontine_payments/{paymentId} {
+      allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isTokenAdmin());
+      allow create: if isSignedIn() && isValidTontinePayment(incoming()) && (
+        existsAfter(/databases/$(database)/documents/tontine_members/$(incoming().memberId))
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow get: if isSignedIn() && (isAdmin() || resource.data.clientId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.clientId == request.auth.uid || isTokenAdmin());
+      allow create: if isSignedIn() && isValidOrder(incoming());
+      allow update: if isAdmin() || (
+        isSignedIn() && 
+        resource.data.clientId == request.auth.uid && 
+        incoming().diff(existing()).affectedKeys().hasOnly(['status']) &&
+        incoming().status == 'cancelled'
+      );
+    }
+
+    match /items/{itemId} {
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if true;
+        allow update, delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       }
     }
 
@@ -86,52 +176,22 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
-
+    
     match /notifications/{notificationId} {
       allow read: if true;
-      allow create: if isAdmin() && isValidNotification(incoming());
-      allow update: if isAdmin() && isValidNotification(incoming());
-      allow delete: if isAdmin();
-    }
-
-    match /items/{itemId} {
-      allow read: if true;
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin() || (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['stock', 'averageRating', 'reviewCount', 'favoriteCount']));
-
-      match /reviews/{reviewId} {
-        allow read: if true;
-        allow create: if isValidId(itemId) && isValidReview(incoming()) && incoming().itemId == itemId;
-        allow delete: if isAdmin();
-        allow update: if false; 
-      }
-    }
-
-    match /orders/{orderId} {
-      allow read: if isSignedIn() && (isAdmin() || (resource != null && resource.data.clientId == request.auth.uid));
-      allow create: if isSignedIn();
-      allow update: if isAdmin() || (
-        isSignedIn() && 
-        request.auth.uid == existing().clientId && 
-        incoming().diff(existing()).affectedKeys().hasOnly(['status']) && 
-        incoming().status == 'cancelled' && 
-        existing().status in ['pending', 'confirmed']
-      );
-      allow delete: if isAdmin() || (
-        isSignedIn() && 
-        existing().clientId == request.auth.uid && 
-        existing().status == 'cancelled'
-      );
+      allow write: if isAdmin();
     }
 
     match /paymentPlans/{planId} {
-      allow read: if isSignedIn() && (isAdmin() || (resource != null && resource.data.clientId == request.auth.uid));
+      allow get: if isSignedIn() && (isAdmin() || resource.data.clientId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.clientId == request.auth.uid || isTokenAdmin());
+      allow write: if isAdmin();
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin();
     }
 
     match /payments/{paymentId} {
-      allow read: if isSignedIn();
+      allow get: if isSignedIn() && (isAdmin() || resource.data.clientId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.clientId == request.auth.uid || isTokenAdmin());
       allow write: if isAdmin();
     }
   }

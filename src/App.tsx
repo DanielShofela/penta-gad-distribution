@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { CartProvider, useCart } from './CartContext';
 import { FavoritesProvider } from './FavoritesContext';
 import { Toaster } from 'sonner';
-import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell, Snowflake, Flame, Coffee, Droplets, Wind, Smartphone, Sofa, Bed, Utensils, Monitor, Layers, Bookmark, Megaphone, Info } from 'lucide-react';
+import { ShoppingCart, User, LogOut, LayoutDashboard, Home as HomeIcon, Package, CreditCard, Menu, X, Plus, Trash2, ChevronRight, CheckCircle, Clock, AlertCircle, ChevronDown, Grid, Bell, Snowflake, Flame, Coffee, Droplets, Wind, Smartphone, Sofa, Bed, Utensils, Monitor, Layers, Bookmark, Megaphone, Info, TrendingUp } from 'lucide-react';
 import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from './firebase';
 import { Item, Notification } from './types';
@@ -292,6 +292,11 @@ const Navbar = () => {
                         <Link to={isAdmin ? "/admin" : "/dashboard"} onClick={() => setIsOpen(false)} className="flex items-center gap-2 text-gray-600 font-bold py-2 px-2 hover:bg-gray-50 rounded-lg transition-colors text-sm">
                           <Package size={16} /> {isAdmin ? "Admin Panel" : "Commandes & Paiements"}
                         </Link>
+                        {!isAdmin && (
+                          <Link to="/tontine-dashboard" onClick={() => setIsOpen(false)} className="flex items-center gap-2 text-blue-600 font-black py-2 px-2 hover:bg-blue-50 rounded-lg transition-all text-sm uppercase italic tracking-tighter">
+                            <TrendingUp size={16} /> Mon Espace Tontine
+                          </Link>
+                        )}
                         <button onClick={() => { logout(); setIsOpen(false); }} className="flex items-center gap-2 w-full text-left text-red-600 font-bold py-3 mt-4 border-t border-gray-50 px-2 transition-colors">
                           <LogOut size={16} /> Déconnexion
                         </button>
@@ -373,6 +378,7 @@ import Checkout from './pages/Checkout';
 import ItemDetail from './pages/ItemDetail';
 import Account from './pages/Account';
 import Favorites from './pages/Favorites';
+import TontineDashboard from './pages/TontineDashboard';
 
 export default function App() {
   return (
@@ -390,6 +396,7 @@ export default function App() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/dashboard" element={<ClientDashboard />} />
+                <Route path="/tontine-dashboard" element={<TontineDashboard />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="/favorites" element={<Favorites />} />
                 <Route path="/admin/*" element={<AdminDashboard />} />

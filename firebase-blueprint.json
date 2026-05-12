@@ -132,6 +132,62 @@
         "active": { "type": "boolean" }
       },
       "required": ["title", "message", "type", "createdAt", "active"]
+    },
+    "TontineGroup": {
+      "title": "TontineGroup",
+      "description": "Automated tontine group for collaborative payment",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "productImage": { "type": "string" },
+        "totalMembers": { "type": "integer" },
+        "currentMembers": { "type": "integer" },
+        "contributionAmount": { "type": "number" },
+        "contributionFrequency": { "type": "string", "enum": ["daily", "weekly"] },
+        "totalCycles": { "type": "integer" },
+        "currentCycle": { "type": "integer" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["waiting", "active", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["productId", "totalMembers", "currentMembers", "contributionAmount", "contributionFrequency", "status", "createdAt"]
+    },
+    "TontineMember": {
+      "title": "TontineMember",
+      "description": "Member of a tontine group",
+      "type": "object",
+      "properties": {
+        "groupId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "rank": { "type": "integer" },
+        "hasReceivedProduct": { "type": "boolean" },
+        "totalPaid": { "type": "number" },
+        "remainingAmount": { "type": "number" },
+        "missedPayments": { "type": "integer" },
+        "nextPaymentDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "late", "blocked"] },
+        "joinedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["groupId", "userId", "rank", "hasReceivedProduct", "totalPaid", "status", "joinedAt"]
+    },
+    "TontinePayment": {
+      "title": "TontinePayment",
+      "description": "Payment record for tontine contribution",
+      "type": "object",
+      "properties": {
+        "groupId": { "type": "string" },
+        "memberId": { "type": "string" },
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "transactionId": { "type": "string" },
+        "paymentDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["success", "pending", "failed"] }
+      },
+      "required": ["groupId", "memberId", "userId", "amount", "paymentDate", "status"]
     }
   },
   "firestore": {
@@ -170,6 +226,18 @@
     "/payments/{paymentId}": {
       "schema": "Payment",
       "description": "Individual payments"
+    },
+    "/tontine_groups/{groupId}": {
+      "schema": "TontineGroup",
+      "description": "Tontine groups"
+    },
+    "/tontine_members/{memberId}": {
+      "schema": "TontineMember",
+      "description": "Tontine members"
+    },
+    "/tontine_payments/{paymentId}": {
+      "schema": "TontinePayment",
+      "description": "Tontine payments"
     }
   }
 }

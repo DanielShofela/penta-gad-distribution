@@ -3,7 +3,7 @@ import { Routes, Route, Link, useLocation, useNavigate, useSearchParams } from '
 import { useAuth } from '../AuthContext';
 import { collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, doc, orderBy, Timestamp, where, getDocs, setDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { Item, Order, PaymentPlan, UserProfile, Payment } from '../types';
+import { Item, Order, PaymentPlan, UserProfile, Payment, TontineGroup, TontineMember } from '../types';
 import { CATEGORY_GROUPS } from '../constants';
 import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Plus, Trash2, Edit2, CheckCircle, Clock, AlertCircle, ChevronRight, Search, TrendingUp, DollarSign, PackageCheck, Settings as SettingsIcon, Eye, Mail, Phone, MapPin, X, ShieldCheck, Bell, Megaphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -34,6 +34,7 @@ const AdminDashboard = () => {
     { to: "/admin/orders", icon: ShoppingCart, label: "Commandes" },
     { to: "/admin/payments", icon: CreditCard, label: "Paiements" },
     { to: "/admin/users", icon: Users, label: "Utilisateurs" },
+    { to: "/admin/tontines", icon: TrendingUp, label: "Gestion Tontines" },
     { to: "/admin/notifications", icon: Bell, label: "Notifications" },
     { to: "/admin/settings", icon: SettingsIcon, label: "Paramètres" },
   ];
@@ -74,6 +75,7 @@ const AdminDashboard = () => {
             <Route path="orders" element={<AdminOrders />} />
             <Route path="payments" element={<AdminPayments />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="tontines" element={<AdminTontines />} />
             <Route path="notifications" element={<AdminNotifications />} />
             <Route path="settings" element={<AdminSettings />} />
           </Routes>
@@ -105,13 +107,13 @@ const AdminOverview = () => {
         .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
         .slice(0, 5);
       setRecentOrders(sorted);
-    });
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'orders'));
     const unsubItems = onSnapshot(collection(db, 'items'), (snap) => {
       setStats(prev => ({ ...prev, itemsCount: snap.size }));
-    });
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'items'));
     const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
       setStats(prev => ({ ...prev, usersCount: snap.size }));
-    });
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'users'));
     return () => { unsubOrders(); unsubItems(); unsubUsers(); };
   }, []);
 
@@ -624,6 +626,7 @@ const AdminPayments = () => {
     try {
       await addDoc(collection(db, 'payments'), {
         paymentPlanId: plan.id,
+        clientId: plan.clientId,
         amount,
         date: Timestamp.now(),
         status: 'completed'
@@ -1200,14 +1203,8 @@ const PaymentList = ({ planId }: { planId: string }) => {
 
       // 2. Update the parent plan's remaining amount
       const planRef = doc(db, 'paymentPlans', planId);
-      const planSnap = await getDocs(query(collection(db, 'paymentPlans'), where('id', '==', planId)));
-      // Note: we might need to fetch the plan data first to be safe, but planId is passed prop.
-      // Better to use a direct doc get:
-      // const planDoc = await getDoc(planRef); // wait, getDoc is not imported?
-      // I see getDocs being used. I'll use the planId directly.
+      const planSnap = await getDocs(query(collection(db, 'paymentPlans'), where('__name__', '==', planId)));
       
-      // I will use a simple update with increment if available, but I don't see increment imported.
-      // I'll just fetch the current plan and update it.
       const planDoc = await getDocs(query(collection(db, 'paymentPlans'), where('__name__', '==', planId)));
       if (!planDoc.empty) {
         const planData = planDoc.docs[0].data() as PaymentPlan;
@@ -1263,11 +1260,11 @@ const PaymentList = ({ planId }: { planId: string }) => {
               </td>
               <td className="py-4 px-2 text-right">
                 <button 
-                  onClick={() => handleDeletePayment(payment)}
-                  className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                  title="Annuler ce versement"
+                   onClick={() => handleDeletePayment(payment)}
+                   className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                   title="Annuler ce versement"
                 >
-                  <Trash2 size={14} />
+                   <Trash2 size={14} />
                 </button>
               </td>
             </tr>
@@ -1282,6 +1279,215 @@ const PaymentList = ({ planId }: { planId: string }) => {
       )}
     </div>
   );
+};
+
+const AdminTontines = () => {
+    const [groups, setGroups] = useState<TontineGroup[]>([]);
+    const [selectedGroup, setSelectedGroup] = useState<TontineGroup | null>(null);
+    const [groupMembers, setGroupMembers] = useState<TontineMember[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const q = query(collection(db, 'tontine_groups'), orderBy('createdAt', 'desc'));
+        return onSnapshot(q, (snap) => {
+            setGroups(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TontineGroup)));
+            setLoading(false);
+        }, (error) => handleFirestoreError(error, OperationType.LIST, 'tontine_groups'));
+    }, []);
+
+    useEffect(() => {
+        if (!selectedGroup) {
+            setGroupMembers([]);
+            return;
+        }
+        const q = query(collection(db, 'tontine_members'), where('groupId', '==', selectedGroup.id), orderBy('rank', 'asc'));
+        return onSnapshot(q, (snap) => {
+            setGroupMembers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TontineMember)));
+        }, (error) => handleFirestoreError(error, OperationType.LIST, 'tontine_members'));
+    }, [selectedGroup]);
+
+    const handleCycleChange = async (groupId: string, newCycle: number) => {
+        try {
+            await updateDoc(doc(db, 'tontine_groups', groupId), { currentCycle: newCycle });
+            toast.success("Cycle mis à jour");
+        } catch (error) {
+            toast.error("Erreur");
+        }
+    };
+
+    const handleMarkReceived = async (memberId: string, received: boolean) => {
+        try {
+            await updateDoc(doc(db, 'tontine_members', memberId), { hasReceivedProduct: received });
+            toast.success("Statut réception mis à jour");
+        } catch (error) {
+            toast.error("Erreur");
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-black text-blue-900 uppercase italic tracking-tight">Gestion des Tontines</h2>
+                <div className="bg-blue-50 text-blue-900 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest">
+                    {groups.length} Groupes Actifs
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                {/* Groups List */}
+                <div className="xl:col-span-1 space-y-4">
+                    {groups.map(group => (
+                        <div 
+                            key={group.id} 
+                            onClick={() => setSelectedGroup(group)}
+                            className={cn(
+                                "p-4 rounded-3xl border transition-all cursor-pointer group",
+                                selectedGroup?.id === group.id ? "bg-blue-900 border-blue-900 shadow-xl scale-[1.02]" : "bg-white border-gray-100 hover:border-blue-200"
+                            )}
+                        >
+                            <div className="flex items-start gap-4">
+                                <div className="w-16 h-16 bg-gray-50 rounded-2xl overflow-hidden p-2 flex-shrink-0">
+                                    <img src={group.productImage} className="w-full h-full object-contain" alt="" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className={cn(
+                                        "font-black text-sm uppercase italic truncate",
+                                        selectedGroup?.id === group.id ? "text-white" : "text-blue-900"
+                                    )}>
+                                        {group.productName}
+                                    </h4>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className={cn(
+                                            "text-[8px] font-black uppercase px-2 py-0.5 rounded-full",
+                                            group.status === 'active' ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                                        )}>
+                                            {group.status}
+                                        </span>
+                                        <span className={cn(
+                                            "text-[10px] font-bold",
+                                            selectedGroup?.id === group.id ? "text-blue-200" : "text-gray-400"
+                                        )}>
+                                            {group.currentMembers}/{group.totalMembers} Membres
+                                        </span>
+                                    </div>
+                                    <div className={cn(
+                                        "mt-3 h-1 rounded-full overflow-hidden",
+                                        selectedGroup?.id === group.id ? "bg-white/10" : "bg-gray-100"
+                                    )}>
+                                        <div 
+                                            className="h-full bg-yellow-400" 
+                                            style={{ width: `${(group.currentMembers / group.totalMembers) * 100}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Group Details */}
+                <div className="xl:col-span-2">
+                    <AnimatePresence mode="wait">
+                        {selectedGroup ? (
+                            <motion.div 
+                                key={selectedGroup.id}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm sticky top-24"
+                            >
+                                <div className="flex justify-between items-start mb-8">
+                                    <div>
+                                        <h3 className="text-xl font-black text-blue-900 uppercase italic leading-none">{selectedGroup.productName}</h3>
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-2">DÉTAILS DU GROUPE / ID: {selectedGroup.id.slice(0, 8)}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="text-right">
+                                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Cycle Actuel</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <button 
+                                                    onClick={() => handleCycleChange(selectedGroup.id, Math.max(1, selectedGroup.currentCycle - 1))}
+                                                    className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center text-blue-900 hover:bg-gray-100"
+                                                >
+                                                    -
+                                                </button>
+                                                <span className="font-black text-xl italic text-blue-900 min-w-[2ch] text-center">#{selectedGroup.currentCycle}</span>
+                                                <button 
+                                                    onClick={() => handleCycleChange(selectedGroup.id, Math.min(selectedGroup.totalMembers, selectedGroup.currentCycle + 1))}
+                                                    className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center text-blue-900 hover:bg-gray-100"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2 flex items-center gap-2">
+                                        <Users size={12} /> Liste des Participants
+                                    </h5>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead>
+                                                <tr className="text-[10px] font-black text-gray-400 uppercase tracking-tighter text-left">
+                                                    <th className="py-2">Rank</th>
+                                                    <th className="py-2">Membre</th>
+                                                    <th className="py-2">Payé</th>
+                                                    <th className="py-2">Reste</th>
+                                                    <th className="py-2">Statut</th>
+                                                    <th className="py-2">Réception</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-50">
+                                                {groupMembers.map(m => (
+                                                    <tr key={m.id} className="text-xs">
+                                                        <td className="py-4 font-black">#{m.rank}</td>
+                                                        <td className="py-4">
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-blue-900">{m.userName}</span>
+                                                                <span className="text-[10px] text-gray-400">ID: {m.userId.slice(0, 6)}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-4 font-black text-blue-900">{formatCurrency(m.totalPaid)}</td>
+                                                        <td className="py-4 font-black text-red-500">{formatCurrency(m.remainingAmount)}</td>
+                                                        <td className="py-4">
+                                                            <span className={cn(
+                                                                "px-2 py-0.5 rounded-full text-[8px] font-black uppercase",
+                                                                m.status === 'active' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                                                            )}>
+                                                                {m.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-4">
+                                                            <button 
+                                                                onClick={() => handleMarkReceived(m.id, !m.hasReceivedProduct)}
+                                                                className={cn(
+                                                                    "flex items-center gap-1 px-3 py-1 rounded-full text-[8px] font-black uppercase transition-all",
+                                                                    m.hasReceivedProduct ? "bg-yellow-400 text-blue-900 shadow-md" : "bg-gray-100 text-gray-400 hover:bg-yellow-100 hover:text-yellow-700"
+                                                                )}
+                                                            >
+                                                                {m.hasReceivedProduct ? <CheckCircle size={10} /> : <Clock size={10} />}
+                                                                {m.hasReceivedProduct ? "Livré" : "Marquer Livré"}
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center p-20 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-100">
+                                <Search size={48} className="text-gray-200 mb-4" />
+                                <p className="text-gray-400 font-bold uppercase tracking-widest text-sm">Sélectionnez un groupe pour voir les détails</p>
+                            </div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 // Utility for tailwind classes
