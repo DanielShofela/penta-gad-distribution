@@ -39,17 +39,23 @@ const Home = () => {
     return () => unsubscribe();
   }, []);
 
-  // Group items by category group
+  // 1. Latest Items (Top 10)
+  const latestItems = items.slice(0, 10);
+  const latestItemsIds = new Set(latestItems.map(i => i.id));
+
+  // 2. Grouped items (excluding those already in latest)
   const groupedItems = CATEGORY_GROUPS.map(group => ({
     ...group,
     items: items.filter(item => {
       const isInGroup = group.categories.some(cat => cat.id === item.category);
-      return isInGroup;
+      const isNotLatest = !latestItemsIds.has(item.id);
+      return isInGroup && isNotLatest;
     })
   })).filter(group => group.items.length > 0);
 
-  // Items that don't fit in any group or all items if no groups match
+  // 3. Other items (excluding grouped and latest)
   const otherItems = items.filter(item => 
+    !latestItemsIds.has(item.id) &&
     !CATEGORY_GROUPS.some(group => 
       group.categories.some(cat => cat.id === item.category)
     )
@@ -465,7 +471,7 @@ const Home = () => {
                 id="scroll-recent"
                 className="flex overflow-x-auto gap-6 pb-6 pt-2 scrollbar-hide snap-x snap-mandatory scroll-smooth"
               >
-                {items.slice(0, 10).map((item, idx) => (
+                {latestItems.map((item, idx) => (
                   <div key={item.id} className="snap-start">
                     <ItemCard item={item} index={idx} />
                   </div>

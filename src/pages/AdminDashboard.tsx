@@ -179,6 +179,7 @@ const AdminOverview = () => {
 const AdminItems = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [formPrice, setFormPrice] = useState<number>(0);
   const [itemImagePreviews, setItemImagePreviews] = useState<string[]>([]);
@@ -252,6 +253,8 @@ const AdminItems = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
     const formData = new FormData(e.currentTarget);
     const itemData = {
       name: formData.get('name') as string,
@@ -282,6 +285,8 @@ const AdminItems = () => {
       closeForm();
     } catch (error) {
       toast.error("Erreur lors de l'enregistrement");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -500,7 +505,13 @@ const AdminItems = () => {
                   </div>
                 </div>
                 <div className="flex gap-4 pt-4">
-                  <button type="submit" className="flex-grow bg-blue-900 text-white py-3 rounded-xl font-bold hover:bg-blue-800 transition-all">Enregistrer</button>
+                  <button 
+                    type="submit" 
+                    disabled={isSaving}
+                    className="flex-grow bg-blue-900 text-white py-3 rounded-xl font-bold hover:bg-blue-800 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {isSaving ? "Enregistrement..." : "Enregistrer"}
+                  </button>
                   <button type="button" onClick={closeForm} className="px-6 py-3 rounded-xl font-bold text-gray-400 hover:bg-gray-50">Annuler</button>
                 </div>
               </div>
