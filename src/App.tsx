@@ -33,6 +33,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 import { CATEGORY_GROUPS } from './constants';
 
+import ScrollToTop from './components/ScrollToTop';
+
 // --- Components ---
 
 const Navbar = () => {
@@ -378,7 +380,8 @@ export default function App() {
       <CartProvider>
         <FavoritesProvider>
           <Router>
-          <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+            <ScrollToTop />
+            <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
             <Navbar />
             <main className="flex-grow">
               <Routes>
